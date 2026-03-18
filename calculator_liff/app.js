@@ -28,6 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.round(num).toLocaleString('zh-TW');
     }
 
+    function formatToWan(num) {
+        if (!num || num === 0) return '0 萬';
+        return (num / 10000).toFixed(1).replace(/\.0$/, '') + ' 萬';
+    }
+
     /* ------------------------------
        模組 A：房貸試算邏輯
        ------------------------------ */
@@ -54,28 +59,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 更新畫面
-        document.getElementById('res-downPayment').innerText = formatNumber(downPayment);
-        document.getElementById('res-loanAmount').innerText = formatNumber(loanAmount);
-        document.getElementById('res-monthlyPay').innerText = formatNumber(monthlyPay);
+        document.getElementById('res-downPayment').innerText = formatToWan(downPayment);
+        document.getElementById('res-loanAmount').innerText = formatToWan(loanAmount);
+        document.getElementById('res-monthlyPay').innerText = formatToWan(monthlyPay);
 
         document.getElementById('mortgageResult').style.display = 'block';
 
-        // 準備字串給 LIFF
-        window.currentResult.mortgage = `【🏠 房貸試算結果】
+        // 準備字串給 LIFF (無表情符號，依指定格式)
+        window.currentResult.mortgage = `【房貸試算結果】
 
-房屋總價：${document.getElementById('m-totalPrice').value} 萬元
-
+房屋總價：${document.getElementById('m-totalPrice').value} 萬
 貸款成數：${Math.round(loanRatio * 100)}%
-
 貸款年限：${years} 年
-
 貸款利率：${(rate * 12 * 100).toFixed(2)}%
-
----
-
-💰 預估自備款：${formatNumber(downPayment)} 元
-
-💰 預估月付金：${formatNumber(monthlyPay)} 元/月`;
+-----
+自備款：${formatToWan(downPayment)}
+貸款總額：${formatToWan(loanAmount)}
+月付金：${formatToWan(monthlyPay)}/月`;
     });
 
     /* ------------------------------
@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const price = parseFloat(document.getElementById('s-price').value) * 10000;
         const taxRate = parseFloat(document.getElementById('s-yearsRule').value);
         const landTax = parseFloat(document.getElementById('s-landTax').value || 0);
+        const miscFee = parseFloat(document.getElementById('s-miscFee').value || 0);
         const scrivenerFee = parseFloat(document.getElementById('s-scrivener').value || 9000); // 預設9000
         const unpaidLoan = parseFloat(document.getElementById('s-unpaidLoan').value || 0) * 10000;
         const agentFeeRate = parseFloat(document.getElementById('s-agentFee').value || 4) / 100;
@@ -95,37 +96,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const agentFee = price * agentFeeRate;
         const escrowFee = Math.round(price * escrowFeeRate);
-        let profit = price - cost - agentFee - escrowFee - scrivenerFee - landTax;
+        const totalCostAndFees = cost + agentFee + escrowFee + scrivenerFee + landTax + miscFee;
+        let profit = price - totalCostAndFees;
         let houseTax = 0;
         if (profit > 0) houseTax = profit * taxRate; // 獲利才扣稅
 
-        const realIncome = price - agentFee - escrowFee - scrivenerFee - landTax - houseTax - unpaidLoan;
+        const realIncome = price - agentFee - escrowFee - scrivenerFee - landTax - miscFee - houseTax - unpaidLoan;
 
         // 更新畫面
-        document.getElementById('res-houseTax').innerText = formatNumber(houseTax);
-        document.getElementById('res-sellAgentFee').innerText = formatNumber(agentFee);
-        document.getElementById('res-sellEscrowFee').innerText = formatNumber(escrowFee);
-        document.getElementById('res-sellScrivenerFee').innerText = formatNumber(scrivenerFee);
-        document.getElementById('res-realIncome').innerText = formatNumber(realIncome);
+        document.getElementById('res-houseTax').innerText = formatToWan(houseTax);
+        document.getElementById('res-sellAgentFee').innerText = formatToWan(agentFee);
+        document.getElementById('res-sellEscrowFee').innerText = formatToWan(escrowFee);
+        document.getElementById('res-sellScrivenerFee').innerText = formatToWan(scrivenerFee);
+        document.getElementById('res-sellLandTax').innerText = formatToWan(landTax);
+        document.getElementById('res-sellMiscFee').innerText = formatToWan(miscFee);
+        document.getElementById('res-realIncome').innerText = formatToWan(realIncome);
 
         document.getElementById('sellResult').style.display = 'block';
 
-        // 準備字串給 LIFF (包含更詳細的明細)
-        window.currentResult.sell = `【💰 賣方稅費試算結果】
+        // 整理持有時間對應的字眼
+        const holdYearsSelect = document.getElementById('s-yearsRule');
+        const holdYearsText = holdYearsSelect.options[holdYearsSelect.selectedIndex].text;
 
-賣出成交價：${document.getElementById('s-price').value} 萬元
+        let msg = `【賣方稅務試算】\n\n買入成本：${formatToWan(cost)}\n賣出成交價：${document.getElementById('s-price').value} 萬`;
+        if (unpaidLoan > 0) msg += `\n貸款本金餘額：${formatToWan(unpaidLoan)}`;
+        msg += `\n持有時間：${holdYearsText}\n-----\n房地合一稅：${formatToWan(houseTax)}\n仲介費：${formatToWan(agentFee)}\n履保費：${formatToWan(escrowFee)}\n代書費：${formatToWan(scrivenerFee)}`;
+        
+        if (landTax > 0) msg += `\n土地增值稅：${formatToWan(landTax)}`;
+        if (miscFee > 0) msg += `\n雜費：${formatToWan(miscFee)}`;
+        msg += `\n實拿金額：${formatToWan(realIncome)}`;
 
----
-
-預估房地合一稅：${formatNumber(houseTax)} 元
-
-仲介費：${formatNumber(agentFee)} 元
-
-履保費：${formatNumber(escrowFee)} 元
-
-代書費：${formatNumber(scrivenerFee)} 元
-
-👉 預估實拿金額：${formatNumber(realIncome)} 元`;
+        window.currentResult.sell = msg;
     });
 
     /* ------------------------------
@@ -137,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const price = parseFloat(document.getElementById('b-price').value) * 10000;
         const presentValue = parseFloat(document.getElementById('b-presentValue').value || 0) * 10000;
         const scrivenerFee = parseFloat(document.getElementById('b-scrivener').value || 9000); // 預設9000
+        const miscFee = parseFloat(document.getElementById('b-miscFee').value || 0);
 
         const escrowFee = Math.round(price * 0.0006); // 履保費
         const deedTax = Math.round(presentValue * 0.06); // 契稅
@@ -144,39 +146,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const agentFee = Math.round(price * 0.02); // 房仲費 2%
         const registerFee = Math.round(price * 0.001); // 規費
 
-        const totalExtraCost = escrowFee + scrivenerFee + deedTax + stampTax + agentFee + registerFee;
+        const totalExtraCost = escrowFee + scrivenerFee + deedTax + stampTax + agentFee + registerFee + miscFee;
 
         // 更新畫面
-        document.getElementById('res-deedTax').innerText = formatNumber(deedTax);
-        document.getElementById('res-stampTax').innerText = formatNumber(stampTax);
-        document.getElementById('res-buyAgentFee').innerText = formatNumber(agentFee);
-        document.getElementById('res-buyRegisterFee').innerText = formatNumber(registerFee);
-        document.getElementById('res-buyEscrowFee').innerText = formatNumber(escrowFee);
-        document.getElementById('res-buyScrivenerFee').innerText = formatNumber(scrivenerFee);
-        document.getElementById('res-totalExtraCost').innerText = formatNumber(totalExtraCost);
+        document.getElementById('res-deedTax').innerText = formatToWan(deedTax);
+        document.getElementById('res-stampTax').innerText = formatToWan(stampTax);
+        document.getElementById('res-buyAgentFee').innerText = formatToWan(agentFee);
+        document.getElementById('res-buyRegisterFee').innerText = formatToWan(registerFee);
+        document.getElementById('res-buyEscrowFee').innerText = formatToWan(escrowFee);
+        document.getElementById('res-buyScrivenerFee').innerText = formatToWan(scrivenerFee);
+        document.getElementById('res-buyMiscFee').innerText = formatToWan(miscFee);
+        document.getElementById('res-totalExtraCost').innerText = formatToWan(totalExtraCost);
 
         document.getElementById('buyResult').style.display = 'block';
 
         // 準備字串給 LIFF
-        window.currentResult.buy = `【🛒 買方稅費試算結果】
+        let msg = `【買方稅費試算】\n\n買入成交價：${document.getElementById('b-price').value} 萬`;
+        if (presentValue > 0) msg += `\n房屋現值：${formatToWan(presentValue)}`;
+        msg += `\n-----\n契稅：${formatToWan(deedTax)}\n印花稅：${formatToWan(stampTax)}\n仲介費：${formatToWan(agentFee)}\n規費：${formatToWan(registerFee)}\n履保費：${formatToWan(escrowFee)}\n代書費：${formatToWan(scrivenerFee)}`;
+        if (miscFee > 0) msg += `\n雜費：${formatToWan(miscFee)}`;
+        msg += `\n衍生總花費：${formatToWan(totalExtraCost)}`;
 
-買入成交價：${document.getElementById('b-price').value} 萬元
-
----
-
-契稅：${formatNumber(deedTax)} 元
-
-印花稅：${formatNumber(stampTax)} 元
-
-仲介費：${formatNumber(agentFee)} 元
-
-規費：${formatNumber(registerFee)} 元
-
-履保費：${formatNumber(escrowFee)} 元
-
-代書費：${formatNumber(scrivenerFee)} 元
-
-👉 衍生總花費預估：${formatNumber(totalExtraCost)} 元`;
+        window.currentResult.buy = msg;
     });
 });
 
