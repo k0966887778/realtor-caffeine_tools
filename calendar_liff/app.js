@@ -75,13 +75,24 @@ document.addEventListener('DOMContentLoaded', () => {
             let title = `${shortName}`;
             let displayDetails = `類別：${category}\n姓名：${record.name}`;
 
-            if (category.includes('假')) {
-                bgColor = '#FF9800'; // 橘色代表請假
-                title = `[假] ${shortName}`;
+            let isLeave = category !== '簽到'; 
+            let prefix = '簽';
+            
+            if (category === '事假') prefix = '事';
+            else if (category === '病假') prefix = '病';
+            else if (category === '公假') prefix = '公';
+            else if (category === '特休') prefix = '特';
+            else if (category === '外出帶看') prefix = '外';
+            else if (isLeave) prefix = '假'; // 預防有其他未知的假別
+            
+            if (isLeave) {
+                bgColor = '#FF9800'; // 橘黃色代表請假或外出
+                title = `[${prefix}] ${shortName}`;
                 displayDetails += `\n請假期間：${record.startDate} ~ ${record.endDate}`;
                 if (record.reason) displayDetails += `\n事由：${record.reason}`;
                 if (record.agent) displayDetails += `\n代理人：${record.agent}`;
             } else {
+                bgColor = '#06C755'; // 簽到綠色
                 title = `[簽] ${shortName}`;
                 displayDetails += `\n打卡時間：${record.time || '無紀錄'}`;
             }
@@ -170,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mockEvents = [
             { title: '[簽] 柏頴', start: today, allDay: true, backgroundColor: '#06C755', extendedProps: { details: `狀態：簽到\n姓名：柏頴\n打卡時間：09:05:12` } },
             { title: '[簽] 大明', start: today, allDay: true, backgroundColor: '#06C755', extendedProps: { details: `狀態：簽到\n姓名：大明\n打卡時間：09:12:00` } },
-            { title: '[假] 小美', start: today, end: tomorrow, allDay: true, backgroundColor: '#FF9800', extendedProps: { details: `狀態：特休\n姓名：小美\n請假期間：${today} ~ ${today}` } }
+            { title: '[特] 小美', start: today, end: tomorrow, allDay: true, backgroundColor: '#FF9800', extendedProps: { details: `狀態：特休\n姓名：小美\n請假期間：${today} ~ ${today}` } }
         ];
         calendar.addEventSource(mockEvents);
     }
