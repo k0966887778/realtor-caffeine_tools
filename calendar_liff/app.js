@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 'dayGridMonth,listWeek'
         },
         height: 'auto',
+        dayCellContent: function(arg) {
+            return arg.date.getDate(); // 只顯示數字，不顯示「日」
+        },
+        dayHeaderContent: function(arg) {
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            return days[arg.date.getDay()];
+        },
         eventClick: function(info) {
             // 點擊事件時觸發 Modal
             showModal(info.event);

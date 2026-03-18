@@ -32,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 'today'
         },
         height: 'auto',
+        dayCellContent: function(arg) {
+            return arg.date.getDate(); // 只顯示數字，不顯示「日」
+        },
+        dayHeaderContent: function(arg) {
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            return days[arg.date.getDay()];
+        },
         dateClick: function(info) {
             toggleDate(info.dateStr);
         },
