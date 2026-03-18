@@ -8,18 +8,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. 初始化 LIFF
     async function initLiff() {
+        // 若 LIFF ID 尚未設定，退回測試模式
+        if (LIFF_ID === "YOUR_LIFF_ID") {
+            document.getElementById('profileBox').innerText = `申請人：${userProfile.displayName}（測試模式）`;
+            return;
+        }
         try {
-            // 在您把這包放到 Server 並取得對應的 LIFF ID 前，這段 liff.init 會報錯，因此先註解起來
-            // await liff.init({ liffId: LIFF_ID });
-            // if (liff.isLoggedIn()) {
-            //     userProfile = await liff.getProfile();
-            // } else {
-            //     liff.login();
-            // }
+            await liff.init({ liffId: LIFF_ID });
+            if (liff.isLoggedIn()) {
+                const profile = await liff.getProfile();
+                userProfile = { userId: profile.userId, displayName: profile.displayName };
+            } else {
+                liff.login();
+            }
             document.getElementById('profileBox').innerText = `申請人：${userProfile.displayName}`;
         } catch (err) {
             console.error("LIFF 初始化失敗", err);
-            document.getElementById('profileBox').innerText = `載入失敗，目前為開發測試模式`;
+            document.getElementById('profileBox').innerText = `載入失敗，請在 LINE 內開啟此頁面`;
         }
     }
     
