@@ -18,11 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         height: 'auto',
         dayCellContent: function(arg) {
-            return arg.date.getDate(); // 只顯示數字，不顯示「日」
+            return arg.dayNumberText.replace('日', '');
         },
         dayHeaderContent: function(arg) {
-            const days = ['日', '一', '二', '三', '四', '五', '六'];
-            return days[arg.date.getDay()];
+            return arg.text.replace('週', '');
         },
         eventClick: function(info) {
             // 點擊事件時觸發 Modal
@@ -67,17 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // 決定顏色與標題 — 依照試算表 A 欄「類別」判斷
             const category = record.category || '';
             let bgColor = '#06C755'; // 預設綠色 (簽到)
-            let title = `${record.name}`;
+            const shortName = formatName(record.name);
+            let title = `${shortName}`;
             let displayDetails = `類別：${category}\n姓名：${record.name}`;
 
             if (category.includes('假')) {
                 bgColor = '#FF9800'; // 橘色代表請假
-                title = `[假] ${record.name}`;
+                title = `[假] ${shortName}`;
                 displayDetails += `\n請假期間：${record.startDate} ~ ${record.endDate}`;
                 if (record.reason)  displayDetails += `\n事由：${record.reason}`;
                 if (record.agent)   displayDetails += `\n代理人：${record.agent}`;
             } else {
-                title = `[簽] ${record.name}`;
+                title = `[簽] ${shortName}`;
                 displayDetails += `\n打卡時間：${record.time || '無紀錄'}`;
             }
 
@@ -105,6 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
         });
+    }
+
+    // 處理 3 字姓名簡化
+    function formatName(name) {
+        if (!name) return '';
+        const n = String(name).trim();
+        return n.length === 3 ? n.slice(1) : n;
     }
 
     // 4. 展示用的假資料

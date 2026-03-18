@@ -33,11 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         height: 'auto',
         dayCellContent: function(arg) {
-            return arg.date.getDate(); // 只顯示數字，不顯示「日」
+            return arg.dayNumberText.replace('日', '');
         },
         dayHeaderContent: function(arg) {
-            const days = ['日', '一', '二', '三', '四', '五', '六'];
-            return days[arg.date.getDay()];
+            return arg.text.replace('週', '');
         },
         dateClick: function(info) {
             toggleDate(info.dateStr);
