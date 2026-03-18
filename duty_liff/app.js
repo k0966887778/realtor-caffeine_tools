@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 如果姓名是 3 個字，只顯示後 2 個字（名）
     function formatName(name) {
         if (!name) return '';
-        const n = name.trim();
+        const n = String(name).trim();
         return n.length === 3 ? n.slice(1) : n;
     }
 
@@ -41,6 +41,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     calendar.render();
+
+    // 1.5 切換排班模式按鈕
+    document.getElementById('toggleEditBtn').addEventListener('click', function() {
+        const formContainer = document.getElementById('editFormContainer');
+        if (formContainer.style.display === 'none') {
+            formContainer.style.display = 'block';
+            this.innerText = '隱藏排班表單';
+            calendar.updateSize(); // 讓日曆重新適應大小
+        } else {
+            formContainer.style.display = 'none';
+            this.innerText = '✏️ 進入排班模式';
+        }
+    });
 
     // 2. 切換選取日期
     function toggleDate(dateStr) {
@@ -167,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 userProfile = { userId: profile.userId, displayName: profile.displayName };
                 profileBox.innerText = `目前使用者：${userProfile.displayName}`;
                 fetchStaffNames();
-                fetchDutyRecords();
             } else {
                 liff.login();
             }
@@ -247,5 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { statusMsg.className = 'status-msg hidden'; }, 5000);
     }
 
+    // 在啟動時直接去撈資料 (不需要等 LIFF 登入完成)
+    fetchDutyRecords();
     initLiff();
 });

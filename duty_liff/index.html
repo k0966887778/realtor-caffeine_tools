@@ -13,14 +13,18 @@
     <div class="app-container">
         <header class="app-header">
             <h1>輪值表管理</h1>
-            <p>點擊日曆日期新增排班，點擊事件可查看或刪除</p>
+            <p>點擊事件可查看或刪除。要新增排班請點擊下方按鈕</p>
         </header>
 
         <div class="calendar-card">
             <div id="calendar"></div>
+            
+            <button id="toggleEditBtn" class="primary-btn" style="margin-top: 20px; background-color: #5C6BC0;">
+                ✏️ 進入排班模式
+            </button>
         </div>
 
-        <div class="calc-form">
+        <div class="calc-form" id="editFormContainer" style="display: none;">
             <form id="dutyForm">
                 <div class="input-group">
                     <label for="shiftType">1. 班別 (早/中/晚)</label>
@@ -48,6 +52,7 @@
                     <div id="selectedDateList" class="date-tags"></div>
                 </div>
 
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">點擊日曆日期來選擇排班日。</p>
                 <button type="submit" id="submitBtn" class="primary-btn" disabled>儲存排班資料</button>
             </form>
         </div>
