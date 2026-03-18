@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>賴柏頴團隊 - 房地產專屬試算工具</title>
+    <meta name="description" content="提供快速的房貸試算、賣方稅務試算與買方稅務試算工具。">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>☕️房仲咖啡因</h1>
+            <p>快速試算工具</p>
+        </header>
+
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-target="mortgage">房貸試算</button>
+            <button class="tab-btn" data-target="sellTax">賣方稅費</button>
+            <button class="tab-btn" data-target="buyTax">買方稅費</button>
+        </nav>
+
+        <main class="tab-content-container">
+            <!-- 房貸試算 -->
+            <section id="mortgage" class="tab-content active">
+                <form id="mortgageForm" class="calc-form">
+                    <div class="input-group">
+                        <label for="m-totalPrice">房屋總價 <i>(萬)</i></label>
+                        <input type="number" id="m-totalPrice" placeholder="例如: 1500" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="m-loanRatio">貸款成數 <i>(%)</i></label>
+                        <input type="number" id="m-loanRatio" value="80" max="100" min="0" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="m-years">貸款年限 <i>(年)</i></label>
+                        <select id="m-years">
+                            <option value="20">20 年</option>
+                            <option value="30" selected>30 年</option>
+                            <option value="40">40 年</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="m-rate">貸款利率 <i>(%)</i></label>
+                        <input type="number" id="m-rate" step="0.01" value="2.06" required>
+                    </div>
+                    <button type="submit" class="calc-btn primary-btn">開始計算</button>
+                </form>
+
+                <div class="result-card" id="mortgageResult" style="display: none;">
+                    <h3>試算結果</h3>
+                    <div class="result-row">
+                        <span>預估自備款：</span>
+                        <span class=\"result-value\"><strong id="res-downPayment">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>貸款總額：</span>
+                        <span class=\"result-value\"><strong id="res-loanAmount">0</strong> 元</span>
+                    </div>
+                    <div class="result-row highlight">
+                        <span>預估月付金：</span>
+                        <span class=\"result-value\"><strong id="res-monthlyPay">0</strong> 元</span>/月
+                    </div>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('mortgage')">發送結果至聊天室</button>
+                </div>
+            </section>
+
+            <!-- 賣方稅務試算 -->
+            <section id="sellTax" class="tab-content">
+                <form id="sellForm" class="calc-form">
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="s-cost">買入成本 <i>(萬)</i></label>
+                            <input type="number" id="s-cost" placeholder="例如: 1000" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="s-price">賣出成交價 <i>(萬)</i></label>
+                            <input type="number" id="s-price" placeholder="例如: 1500" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="s-unpaidLoan">貸款本金餘額 <i>(萬，選填)</i></label>
+                            <input type="number" id="s-unpaidLoan" placeholder="例如: 500">
+                        </div>
+                        <div class="input-group">
+                            <label for="s-yearsRule">持有時間 <i>(房地合一稅率)</i></label>
+                            <select id="s-yearsRule">
+                                <option value="0.45">1年以內 (45%)</option>
+                                <option value="0.45">1-2年 (45%)</option>
+                                <option value="0.35">2-5年 (35%)</option>
+                                <option value="0.20" selected>5-10年 (20%)</option>
+                                <option value="0.15">10年以上 (15%)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px dashed #ccc;">
+
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label for="s-agentFee">仲介費 <i>(%)</i></label>
+                            <input type="number" id="s-agentFee" step="0.1" value="4">
+                        </div>
+                        <div class="input-group">
+                            <label for="s-escrowFee">履保費 <i>(%，成交價萬分之6)</i></label>
+                            <input type="number" id="s-escrowFee" step="0.01" value="0.06">
+                        </div>
+                        <div class="input-group">
+                            <label for="s-scrivener">代書費 <i>(元)</i></label>
+                            <input type="number" id="s-scrivener" value="9000">
+                        </div>
+                        <div class="input-group">
+                            <label for="s-landTax">土地增值稅 <i>(元，選填)</i></label>
+                            <input type="number" id="s-landTax" value="0" placeholder="0">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="calc-btn primary-btn" style="margin-top: 20px;">開始計算</button>
+                </form>
+
+                <div class="result-card" id="sellResult" style="display: none;">
+                    <h3>試算結果</h3>
+                    <div class="result-row">
+                        <span>預估房地合一稅 <i>(獲利 × 稅率)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-houseTax">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>仲介費 <i>(成交價 × %)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-sellAgentFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>履保費 <i>(賣價 × %)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-sellEscrowFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>代書費：</span>
+                        <span class=\"result-value\"><strong id="res-sellScrivenerFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row highlight">
+                        <span style="display: flex; flex-direction: column;">
+                            預估實拿金額：
+                            <i style="color: grey; font-size: 13px; font-weight: normal; margin-top: 4px;">(已扣除仲介費、履保費、代書費與貸款本金餘額)</i>
+                        </span>
+                        <span class=\"result-value\"><strong id="res-realIncome">0</strong> 元</span>
+                    </div>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('sell')">發送結果至聊天室</button>
+                </div>
+            </section>
+
+            <!-- 買方稅務試算 -->
+            <section id="buyTax" class="tab-content">
+                <form id="buyForm" class="calc-form">
+                    <div class="input-group">
+                        <label for="b-price">買入成交價 <i>(萬)</i></label>
+                        <input type="number" id="b-price" placeholder="例如: 1500" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="b-presentValue">房屋現值 <i>(萬，選填：計算契稅用)</i></label>
+                        <input type="number" id="b-presentValue" placeholder="0" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label for="b-scrivener">代書費 <i>(元)</i></label>
+                        <input type="number" id="b-scrivener" value="9000">
+                    </div>
+                    <button type="submit" class="calc-btn primary-btn">開始計算</button>
+                </form>
+
+                <div class="result-card" id="buyResult" style="display: none;">
+                    <h3>試算結果</h3>
+                    <div class="result-row">
+                        <span>契稅 <i>(房屋現值 × 6%)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-deedTax">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>印花稅 <i>(成交價 × 0.1%)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-stampTax">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>仲介費 <i>(成交價 × 2%)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-buyAgentFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>規費 <i>(成交價 × 0.1%)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-buyRegisterFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>履保費 <i>(成交價 × 0.06%)</i>：</span>
+                        <span class=\"result-value\"><strong id="res-buyEscrowFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row">
+                        <span>代書費：</span>
+                        <span class=\"result-value\"><strong id="res-buyScrivenerFee">0</strong> 元</span>
+                    </div>
+                    <div class="result-row highlight">
+                        <span style="display: flex; flex-direction: column;">
+                            衍生總花費預估：
+                            <i style="color: grey; font-size: 13px; font-weight: normal; margin-top: 4px;">(包含仲介、契稅、印花、規費、履保與代書費)</i>
+                        </span>
+                        <span class=\"result-value\"><strong id="res-totalExtraCost">0</strong> 元</span>
+                    </div>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('buy')">發送結果至聊天室</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 引入 html2canvas -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 引入 LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="./app.js"></script>
+</body>
+
+</html>
