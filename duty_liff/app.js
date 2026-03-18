@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 【重要】請替換為您在 LINE Developers Console 申請的 LIFF ID 與 GAS 部署連結
     const LIFF_ID = "2009511611-TcLF758l";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYR5WeGyLjuEqE6OWb3TJE_H3iu3pS67S7ouHHX1GsrJOFIl_irnCYfiQjYtJp11a7Kg/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxXZwCExk4Wn2Cb2yZUpH0hUY8ssBforEN8dtnk11601K6DRJLPWJDoW40pxDeKP0yMLw/exec";
 
     let userProfile = { userId: "", displayName: "待載入..." };
     let selectedDates = new Set();
