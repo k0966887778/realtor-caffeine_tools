@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 預設設定：請替換為您最終的 LIFF ID 與 GAS 部署連結
     const LIFF_ID = "YOUR_LIFF_ID";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyV13MUzavho_lsOArZflRgW9a2P9h0-OhGJYDTi-tWdMrf4P9G5kcWMdUTP3olBIx7/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzENRqwu8TaGKbqDMkdF_5A3RZ1c0xMRoaTXWtg_cHm92R9ggqecOK3FG_WLgVOHicQ/exec";
 
     // 暫存的本地使用者資料，實際上線會由 LIFF 取得
     let userProfile = { userId: "測試ID", displayName: "王大明" }; 
