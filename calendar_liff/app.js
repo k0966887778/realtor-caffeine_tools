@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // 透過 GET 請求取得試算表轉成的 JSON 陣列
-            const response = await fetch(GAS_WEB_APP_URL);
+            const response = await fetch(GAS_WEB_APP_URL + '?action=records');
             const data = await response.json(); 
             
             // 預期 data 格式: [ { startDate: "2026/03/18", endDate: "2026/03/18", time: "09:00:00", name: "王大明", status: "簽到" }, ... ]
