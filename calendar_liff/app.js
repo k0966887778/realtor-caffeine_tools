@@ -57,12 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. 轉換資料：根據文件定義的欄位轉為 FullCalendar 支援的格式
     function parseDataToEvents(records) {
         return records.map(record => {
-            // 決定顏色與標題
+            // 決定顏色與標題 — 依照試算表 A 欄「類別」判斷
+            const category = record.category || '';
             let bgColor = '#06C755'; // 預設綠色 (簽到)
             let title = `${record.name}`;
-            let displayDetails = `狀態：${record.status}\n姓名：${record.name}`;
+            let displayDetails = `類別：${category}\n姓名：${record.name}`;
 
-            if (record.status === '臨時請假' || record.status === '預先請假' || String(record.status).includes("假")) {
+            if (category.includes('假')) {
                 bgColor = '#FF9800'; // 橘色代表請假
                 title = `[假] ${record.name}`;
                 displayDetails += `\n請假期間：${record.startDate} ~ ${record.endDate}`;
