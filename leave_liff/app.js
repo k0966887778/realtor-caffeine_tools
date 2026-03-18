@@ -11,14 +11,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initLiff() {
         const profileBox = document.getElementById('profileBox');
         
+        // 檢查 LIFF SDK 是否存在
+        if (typeof liff === 'undefined') {
+            profileBox.innerText = "❌ 錯誤：LIFF SDK 未載入，請檢查網路或 index.html 設定";
+            alert("錯誤：找不到 liff 物件，SDK 可能未成功載入。");
+            return;
+        }
+
         // 若 LIFF ID 尚未設定，退回測試模式
-        if (LIFF_ID === "YOUR_LIFF_ID") {
+        if (LIFF_ID === "YOUR_LIFF_ID" || !LIFF_ID) {
             profileBox.innerText = `申請人：${userProfile.displayName}（測試模式）`;
             isLiffReady = true;
             return;
         }
 
         try {
+            console.log("正在初始化 LIFF ID:", LIFF_ID);
             await liff.init({ liffId: LIFF_ID });
             
             if (liff.isLoggedIn()) {
@@ -26,15 +34,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 userProfile = { userId: profile.userId, displayName: profile.displayName };
                 profileBox.innerText = `申請人：${userProfile.displayName}`;
                 isLiffReady = true;
+                console.log("LIFF 初始化成功，使用者:", profile.displayName);
             } else {
-                // 未登入則導向登入頁面
+                console.log("使用者未登入，跳轉登入頁...");
                 liff.login();
             }
         } catch (err) {
             console.error("LIFF 初始化失敗", err);
-            profileBox.innerText = `載入失敗：${err.message || '請在 LINE 內開啟'}`;
-            // 彈出錯誤訊息幫助偵錯
-            alert("LIFF 初始化出錯：" + err.message);
+            const errorMsg = err.message || JSON.stringify(err);
+            profileBox.innerText = `❌ 載入失敗：${errorMsg}`;
+            // 更多細節供使用者反饋
+            alert("LIFF 初始化出錯！\n原因：" + errorMsg + "\n請確認 LINE Console 的 Endpoint URL 是否與目前網址完全相符。");
         }
     }
     
