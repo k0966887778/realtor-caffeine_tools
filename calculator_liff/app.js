@@ -61,7 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mortgageResult').style.display = 'block';
 
         // 準備字串給 LIFF
-        window.currentResult.mortgage = `【🏠 房貸試算結果】\n房屋總價：${document.getElementById('m-totalPrice').value} 萬元\n貸款成數：${Math.round(loanRatio * 100)}%\n貸款年限：${years} 年\n貸款利率：${(rate * 12 * 100).toFixed(2)}%\n---\n💰 預估自備款：${formatNumber(downPayment)} 元\n💰 預估月付金：${formatNumber(monthlyPay)} 元/月`;
+        window.currentResult.mortgage = `【🏠 房貸試算結果】
+
+房屋總價：${document.getElementById('m-totalPrice').value} 萬元
+
+貸款成數：${Math.round(loanRatio * 100)}%
+
+貸款年限：${years} 年
+
+貸款利率：${(rate * 12 * 100).toFixed(2)}%
+
+---
+
+💰 預估自備款：${formatNumber(downPayment)} 元
+
+💰 預估月付金：${formatNumber(monthlyPay)} 元/月`;
     });
 
     /* ------------------------------
@@ -97,7 +111,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('sellResult').style.display = 'block';
 
         // 準備字串給 LIFF (包含更詳細的明細)
-        window.currentResult.sell = `【💰 賣方稅費試算結果】\n賣出總價：${document.getElementById('s-price').value} 萬元\n---\n預估房地合一稅(獲利 × 稅率)：${formatNumber(houseTax)} 元\n仲介費(賣價 × 趴數)：${formatNumber(agentFee)} 元\n履保費(賣價 × 趴數)：${formatNumber(escrowFee)} 元\n代書費：${formatNumber(scrivenerFee)} 元\n👉 預估實拿金額(已扣除仲介費、履保費、代書費與貸款本金餘額)：${formatNumber(realIncome)} 元`;
+        window.currentResult.sell = `【💰 賣方稅費試算結果】
+
+賣出成交價：${document.getElementById('s-price').value} 萬元
+
+---
+
+預估房地合一稅：${formatNumber(houseTax)} 元
+
+仲介費：${formatNumber(agentFee)} 元
+
+履保費：${formatNumber(escrowFee)} 元
+
+代書費：${formatNumber(scrivenerFee)} 元
+
+👉 預估實拿金額：${formatNumber(realIncome)} 元`;
     });
 
     /* ------------------------------
@@ -130,101 +158,50 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('buyResult').style.display = 'block';
 
         // 準備字串給 LIFF
-        window.currentResult.buy = `【🛒 買方稅費試算結果】\n買入總價：${document.getElementById('b-price').value} 萬元\n---\n契稅(房屋現值 × 6%)：${formatNumber(deedTax)} 元\n印花稅(成交價 × 0.1%)：${formatNumber(stampTax)} 元\n仲介費(成交價 × 2%)：${formatNumber(agentFee)} 元\n規費(成交價 × 0.1%)：${formatNumber(registerFee)} 元\n履保費(成交價 × 0.06%)：${formatNumber(escrowFee)} 元\n代書費：${formatNumber(scrivenerFee)} 元\n👉 衍生總花費預估(包含仲介、契稅、印花、規費、履保與代書費)：${formatNumber(totalExtraCost)} 元`;
+        window.currentResult.buy = `【🛒 買方稅費試算結果】
+
+買入成交價：${document.getElementById('b-price').value} 萬元
+
+---
+
+契稅：${formatNumber(deedTax)} 元
+
+印花稅：${formatNumber(stampTax)} 元
+
+仲介費：${formatNumber(agentFee)} 元
+
+規費：${formatNumber(registerFee)} 元
+
+履保費：${formatNumber(escrowFee)} 元
+
+代書費：${formatNumber(scrivenerFee)} 元
+
+👉 衍生總花費預估：${formatNumber(totalExtraCost)} 元`;
     });
 });
 
 /* ------------------------------
-   下載截圖功能
+   LIFF 發送回聊天室
    ------------------------------ */
-function downloadScreenshot(type, event) {
-    let targetId = '';
-    let fileName = '';
-    
-    if (type === 'mortgage') {
-        targetId = 'mortgage';
-        fileName = '房貸試算結果.png';
-    } else if (type === 'sell') {
-        targetId = 'sellTax';
-        fileName = '賣方稅費試算結果.png';
-    } else if (type === 'buy') {
-        targetId = 'buyTax';
-        fileName = '買方稅費試算結果.png';
-    }
-    
-    // 改成擷取整個 App，包含上方的標題與頁籤
-    const targetElement = document.querySelector('.app-container');
-    if (!targetElement) return;
+function sendLiffMessage(type) {
+    const textData = window.currentResult[type];
+    if (!textData) return;
 
-    let btn = null;
-    let originText = '';
-    if (event && event.currentTarget) {
-        btn = event.currentTarget;
-        originText = btn.innerText;
-        btn.innerText = '處理中...';
-        btn.disabled = true;
+    if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) {
+        alert("此功能需在 LINE App 中開啟才能傳送訊息到聊天室！
+
+預計傳送內容：
+" + textData);
+        return;
     }
 
-    // 將目標元素內容暫存，先把按鈕藏起來不要截到按鈕
-    const btnDisplay = btn ? btn.style.display : '';
-    if (btn) btn.style.display = 'none';
-
-    document.body.classList.add('capturing');
-    // 確保目標元素有背景，否則部分 iOS 會有透明度 bug
-    const originalBg = targetElement.style.backgroundColor;
-    targetElement.style.backgroundColor = '#f4f7f6';
-
-    // iOS 修正：強制頁面捲動到最上面，以防止 html2canvas 截出空白
-    window.scrollTo(0, 0);
-    
-    html2canvas(targetElement, {
-        scale: 2,
-        logging: false, 
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#f4f7f6",
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
-    }).then(canvas => {
-        // 截圖完把按鈕顯示回來
-        document.body.classList.remove('capturing');
-        targetElement.style.backgroundColor = originalBg;
-        if (btn) {
-            btn.style.display = btnDisplay;
-            btn.innerText = originText;
-            btn.disabled = false;
-        }
-
-        const imgData = canvas.toDataURL("image/png");
-        
-        // 為了支援手機瀏覽器 (尤其是 LINE in-app browser) 更好的下載體驗
-        if (navigator.userAgent.match(/Line/i)) {
-            // 如果在 LINE 裡面，直接另開視窗顯示圖片，讓使用者長按儲存 (因 LINE 阻擋 a.download)
-            document.write('<img src="' + imgData + '" style="width:100%;"><br><div style="text-align:center; padding:20px; font-family:sans-serif; color:#666;">請長按上方圖片儲存</div>');
-            document.close();
-            return;
-        }
-
-        const a = document.createElement('a');
-        a.href = imgData;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-    }).catch(err => {
-        document.body.classList.remove('capturing');
-        targetElement.style.backgroundColor = originalBg;
-        console.error("截圖失敗", err);
-        alert("產生圖片失敗，請稍後再試！");
-        if (btn) {
-            btn.style.display = btnDisplay;
-            btn.innerText = originText;
-            btn.disabled = false;
-        }
+    liff.sendMessages([{
+        type: 'text',
+        text: textData
+    }]).then(() => {
+        liff.closeWindow();
+    }).catch((err) => {
+        console.error('LIFF send Error: ', err);
+        alert('發生錯誤無法傳送：' + err);
     });
 }

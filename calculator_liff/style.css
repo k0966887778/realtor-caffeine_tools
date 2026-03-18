@@ -284,7 +284,7 @@ body {
     width: 100%;
     margin-top: 24px;
     padding: 14px;
-    background: #111;
+    background: #333;
     color: white;
     border: none;
     border-radius: 8px;
@@ -298,9 +298,8 @@ body {
     gap: 8px;
 }
 
-.send-liff-btn:disabled {
-    background: #aaa;
-    cursor: not-allowed;
+.send-liff-btn:before {
+    content: "💬";
 }
 
 
@@ -310,46 +309,3 @@ body {
 }
 
 
-/* 修正 iOS html2canvas 截圖變白的問題 (移除 box-shadow 與特殊繪製機制) */
-body.capturing * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-    transform: none !important;
-}
-/* 強制在截圖時覆蓋透明度與顏色與背景 避免 iOS html2canvas 變白 */
-body.capturing, body.capturing .app-container {
-    background-color: #f4f7f6 !important;
-}
-
-body.capturing .calc-form, body.capturing .result-card {
-    background-color: #ffffff !important;
-    border: 1px solid #eee !important;
-}
-
-body.capturing * {
-    opacity: 1 !important;
-    filter: none !important;
-    -webkit-filter: none !important;
-    color: inherit; /* 不要強制蓋掉所有的 color，避免 primary-color 不見 */
-}
-
-/* 強制輸入框和文字顏色明顯 */
-body.capturing input, 
-body.capturing select,
-body.capturing label,
-body.capturing span,
-body.capturing strong {
-    color: #333333 !important;
-    -webkit-text-fill-color: #333333 !important;
-}
-
-body.capturing .result-row.highlight .result-value {
-    color: #05a044 !important;
-    -webkit-text-fill-color: #05a044 !important;
-}
-
-body.capturing .primary-btn {
-    background-color: #06C755 !important;
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}

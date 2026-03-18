@@ -64,7 +64,7 @@
                         <span>預估月付金：</span>
                         <span class=\"result-value\"><strong id="res-monthlyPay">0</strong> 元</span>/月
                     </div>
-                    <button class="send-liff-btn" onclick="downloadScreenshot('mortgage', event)">儲存試算結果</button>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('mortgage')">發送結果至聊天室</button>
                 </div>
             </section>
 
@@ -145,7 +145,7 @@
                         </span>
                         <span class=\"result-value\"><strong id="res-realIncome">0</strong> 元</span>
                     </div>
-                    <button class="send-liff-btn" onclick="downloadScreenshot('sell', event)">儲存試算結果</button>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('sell')">發送結果至聊天室</button>
                 </div>
             </section>
 
@@ -200,14 +200,12 @@
                         </span>
                         <span class=\"result-value\"><strong id="res-totalExtraCost">0</strong> 元</span>
                     </div>
-                    <button class="send-liff-btn" onclick="downloadScreenshot('buy', event)">儲存試算結果</button>
+                    <button class="send-liff-btn" onclick="sendLiffMessage('buy')">發送結果至聊天室</button>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- 引入 html2canvas -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <!-- 引入 html2canvas -->
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <!-- 引入 LIFF SDK -->
