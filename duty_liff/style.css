@@ -1,0 +1,161 @@
+:root {
+    --primary-color: #06C755;
+    --primary-dark: #05a044;
+    --bg-color: #f4f7f6;
+    --card-bg: #ffffff;
+    --text-main: #333333;
+    --text-muted: #777777;
+    --border-radius: 16px;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    --selected-date-bg: #e8f5e9;
+    --selected-date-circle: #06C755;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+}
+
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.app-header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.app-header p {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.calendar-card {
+    background: white;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+/* FullCalendar 微調 */
+#calendar {
+    font-size: 14px;
+}
+.fc .fc-toolbar-title { font-size: 1.2rem; }
+.fc .fc-button-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
+.fc .fc-button-primary:hover { background-color: var(--primary-dark); border-color: var(--primary-dark); }
+.fc .fc-daygrid-day.fc-day-today { background-color: transparent !important; }
+/* 選中樣式 */
+.selected-day {
+    background-color: var(--selected-date-bg) !important;
+    transition: background-color 0.2s;
+}
+.selected-day .fc-daygrid-day-number {
+    color: white;
+    background: var(--selected-date-circle);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 5px;
+}
+
+.calc-form {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #444;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fdfdfd;
+}
+
+.selected-info {
+    font-size: 14px;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.date-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.date-tag {
+    background: #eee;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.primary-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-btn:disabled {
+    background: #ccc;
+}
+
+.status-msg {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.status-msg.success { background: #e8f5e9; color: #2e7d32; }
+.status-msg.error { background: #ffebee; color: #c62828; }
+.hidden { display: none; }
+
+.app-footer {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}

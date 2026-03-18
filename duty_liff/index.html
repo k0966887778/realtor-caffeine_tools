@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>輪值表管理 - 日日有桔</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- FullCalendar SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>輪值表管理</h1>
+            <p>點擊日曆選擇多個日期進行排班</p>
+        </header>
+
+        <div class="calendar-card">
+            <div id="calendar"></div>
+        </div>
+
+        <div class="calc-form">
+            <form id="dutyForm">
+                <div class="input-group">
+                    <label for="dutyName">1. 值班同仁姓名</label>
+                    <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="輸入或選擇姓名" required>
+                    <datalist id="staffList"></datalist>
+                </div>
+
+                <div class="input-group">
+                    <label for="editorName">2. 編輯人 (助理姓名)</label>
+                    <input type="text" id="editorName" name="editorName" placeholder="請輸入您的姓名" required>
+                </div>
+
+                <div class="selected-info">
+                    已選擇日期：<span id="dateCount">0</span> 天
+                    <div id="selectedDateList" class="date-tags"></div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="primary-btn" disabled>儲存排班資料</button>
+            </form>
+        </div>
+
+        <div id="statusMsg" class="status-msg hidden"></div>
+        
+        <footer class="app-footer">
+            <p id="profileBox">正在載入使用者資料...</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
