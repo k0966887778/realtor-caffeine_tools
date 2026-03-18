@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.classList.remove('selected-day');
             }
         });
-        document.getElementById('dateCount').innerText = selectedDates.size;
         const listEl = document.getElementById('selectedDateList');
         listEl.innerHTML = '';
         Array.from(selectedDates).sort().forEach(date => {
@@ -104,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const name = formatName(r.name);
                     const color = shiftColors[r.shift] || '#607D8B';
                     return {
-                        title: `${r.shift} ${name}`,
+                        title: `${(r.shift || '').replace('班', '')} ${name}`,
                         start: r.date,
                         allDay: true,
                         backgroundColor: color,
@@ -198,16 +197,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // 7. 讀取歷史人員名單
     async function fetchStaffNames() {
         const datalist = document.getElementById('staffList');
+        const editorList = document.getElementById('editorList');
         try {
             const response = await fetch(`${GAS_WEB_APP_URL}?action=get_staff_list`);
             const data = await response.json();
-            if (data && data.names) {
-                datalist.innerHTML = '';
-                data.names.forEach(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    datalist.appendChild(option);
-                });
+            if (data) {
+                if (data.names && datalist) {
+                    datalist.innerHTML = '';
+                    data.names.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        datalist.appendChild(option);
+                    });
+                }
+                if (data.editors && editorList) {
+                    editorList.innerHTML = '';
+                    data.editors.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        editorList.appendChild(option);
+                    });
+                }
             }
         } catch (err) {
             console.error("無法獲取名單", err);

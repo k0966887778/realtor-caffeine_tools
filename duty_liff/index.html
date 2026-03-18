@@ -39,22 +39,21 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="dutyName">2. 值班者</label>
+                    <label for="dutyName">值班者</label>
                     <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="請輸入值班者姓名" required>
                     <datalist id="staffList"></datalist>
                 </div>
 
                 <div class="input-group">
                     <label for="editorName">3. 編輯者</label>
-                    <input type="text" id="editorName" name="editorName" placeholder="請輸入您的姓名" required>
+                    <input type="text" id="editorName" name="editorName" list="editorList" placeholder="請輸入您的姓名" required>
+                    <datalist id="editorList"></datalist>
                 </div>
 
                 <div class="selected-info">
-                    已選擇日期：<span id="dateCount">0</span> 天
+                    已選擇：
                     <div id="selectedDateList" class="date-tags"></div>
                 </div>
-
-                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">點擊日期來多選排班日</p>
                 <button type="submit" id="submitBtn" class="primary-btn" disabled>儲存排班資料</button>
             </form>
         </div>
