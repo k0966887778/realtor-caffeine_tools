@@ -188,10 +188,7 @@ function sendLiffMessage(type) {
     if (!textData) return;
 
     if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) {
-        alert("此功能需在 LINE App 中開啟才能傳送訊息到聊天室！
-
-預計傳送內容：
-" + textData);
+        alert("此功能需在 LINE App 中開啟才能傳送訊息到聊天室！\n\n預計傳送內容：\n" + textData);
         return;
     }
 
