@@ -174,11 +174,21 @@ function downloadScreenshot(type, event) {
     const originalBg = targetElement.style.backgroundColor;
     targetElement.style.backgroundColor = '#f4f7f6';
 
+    // iOS 修正：強制頁面捲動到最上面，以防止 html2canvas 截出空白
+    window.scrollTo(0, 0);
+    
     html2canvas(targetElement, {
         scale: 2,
         logging: false, 
         useCORS: true,
-        backgroundColor: "#f4f7f6"
+        allowTaint: true,
+        backgroundColor: "#f4f7f6",
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
     }).then(canvas => {
         // 截圖完把按鈕顯示回來
         document.body.classList.remove('capturing');
