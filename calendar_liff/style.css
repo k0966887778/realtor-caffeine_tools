@@ -62,6 +62,7 @@ body {
     background-color: var(--primary-dark) !important;
     border-color: var(--primary-dark) !important;
 }
+.fc .fc-daygrid-day-top { flex-direction: row !important; } /* 將日期移至左邊 */
 .fc-theme-standard td, .fc-theme-standard th {
     border-color: #eee;
 }

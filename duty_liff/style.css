@@ -60,6 +60,7 @@ body {
 .fc .fc-toolbar-title { font-size: 1.2rem; }
 .fc .fc-button-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
 .fc .fc-button-primary:hover { background-color: var(--primary-dark); border-color: var(--primary-dark); }
+.fc .fc-daygrid-day-top { flex-direction: row !important; } /* 將日期移至左邊 */
 .fc .fc-daygrid-day.fc-day-today { background-color: transparent !important; }
 /* 選中樣式 */
 .selected-day {
