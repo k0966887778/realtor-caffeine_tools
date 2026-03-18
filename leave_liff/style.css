@@ -84,7 +84,7 @@ body {
     margin-left: 4px;
 }
 
-.input-group input, 
+.input-group input,
 .input-group select,
 .input-group textarea {
     width: 100%;
@@ -98,7 +98,7 @@ body {
     resize: none;
 }
 
-.input-group input:focus, 
+.input-group input:focus,
 .input-group select:focus,
 .input-group textarea:focus {
     outline: none;
@@ -129,6 +129,7 @@ body {
 .primary-btn:active {
     transform: scale(0.98);
 }
+
 .primary-btn:disabled {
     background: #888;
     box-shadow: none;

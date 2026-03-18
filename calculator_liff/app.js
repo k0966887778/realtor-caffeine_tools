@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let msg = `【賣方稅務試算】\n\n買入成本：${formatToWan(cost)}\n賣出成交價：${document.getElementById('s-price').value} 萬`;
         if (unpaidLoan > 0) msg += `\n貸款本金餘額：${formatToWan(unpaidLoan)}`;
         msg += `\n持有時間：${holdYearsText}\n-----\n房地合一稅：${formatToWan(houseTax)}\n仲介費：${formatToWan(agentFee)}\n履保費：${formatToWan(escrowFee)}\n代書費：${formatToWan(scrivenerFee)}`;
-        
+
         if (landTax > 0) msg += `\n土地增值稅：${formatToWan(landTax)}`;
         if (miscFee > 0) msg += `\n雜費：${formatToWan(miscFee)}`;
         msg += `\n實拿金額：${formatToWan(realIncome)}`;

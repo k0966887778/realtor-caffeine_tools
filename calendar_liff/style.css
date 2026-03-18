@@ -10,7 +10,11 @@
     --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -57,31 +61,43 @@ body {
     border-color: var(--primary-color) !important;
     text-transform: capitalize;
 }
+
 .fc .fc-button-primary:not(:disabled):active,
 .fc .fc-button-primary:not(:disabled).fc-button-active {
     background-color: var(--primary-dark) !important;
     border-color: var(--primary-dark) !important;
 }
-.fc .fc-daygrid-day-top { flex-direction: row !important; } /* 將日期移至左邊 */
-.fc-theme-standard td, .fc-theme-standard th {
+
+.fc .fc-daygrid-day-top {
+    flex-direction: row !important;
+}
+
+/* 將日期移至左邊 */
+.fc-theme-standard td,
+.fc-theme-standard th {
     border-color: #eee;
 }
+
 .fc-day-today {
     background-color: rgba(6, 199, 85, 0.05) !important;
 }
+
 .fc-event {
     border: none !important;
     border-radius: 4px;
     padding: 2px 4px;
     font-size: 11px;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Modal 彈窗樣式 */
 .modal-overlay {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
@@ -92,8 +108,13 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-content {
@@ -134,5 +155,32 @@ body {
     transition: background 0.3s;
 }
 
-.primary-btn:hover { background: var(--primary-dark); }
-.mt-3 { margin-top: 20px; }
+.primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.mt-3 {
+    margin-top: 20px;
+}
+
+/* 篩選器樣式 (動態插入至 FullCalendar Toolbar) */
+.fc-user-filter {
+    padding: 6px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    color: var(--text-main);
+    margin-right: 12px;
+    cursor: pointer;
+    vertical-align: middle;
+    outline: none;
+    transition: border-color 0.2s;
+    height: 38px;
+    /* 對齊旁邊的按鈕高度 */
+}
+
+.fc-user-filter:focus,
+.fc-user-filter:hover {
+    border-color: var(--primary-color);
+}

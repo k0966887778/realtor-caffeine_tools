@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingStatus = document.getElementById('loadingStatus');
 
     let calendar; // FullCalendar 實例
+    let allEvents = []; // 儲存所有的事件用於篩選
 
     // 1. 初始化 FullCalendar UI (空資料)
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -17,13 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 'dayGridMonth,listWeek'
         },
         height: 'auto',
-        dayCellContent: function(arg) {
+        dayCellContent: function (arg) {
             return arg.dayNumberText.replace('日', '');
         },
-        dayHeaderContent: function(arg) {
+        dayHeaderContent: function (arg) {
             return arg.text.replace('週', '');
         },
-        eventClick: function(info) {
+        eventClick: function (info) {
             // 點擊事件時觸發 Modal
             showModal(info.event);
         }
@@ -43,15 +44,19 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 透過 GET 請求取得試算表轉成的 JSON 陣列
             const response = await fetch(GAS_WEB_APP_URL + '?action=records');
-            const data = await response.json(); 
-            
-            // 預期 data 格式: [ { startDate: "2026/03/18", endDate: "2026/03/18", time: "09:00:00", name: "王大明", status: "簽到" }, ... ]
+            const data = await response.json();
+
+            // 預期 data 格式: [ { startDate: "...", ... }, ... ]
             const events = parseDataToEvents(data);
+            allEvents = events;
             calendar.addEventSource(events);
-            
+
+            // 建立使用者篩選器
+            buildUserFilter(events);
+
             loadingStatus.innerText = "資料載入完成！";
             loadingStatus.style.color = "var(--primary-color)";
-            
+
             setTimeout(() => { loadingStatus.style.display = 'none'; }, 2000);
         } catch (err) {
             console.error("無法抓取資料", err);
@@ -74,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 bgColor = '#FF9800'; // 橘色代表請假
                 title = `[假] ${shortName}`;
                 displayDetails += `\n請假期間：${record.startDate} ~ ${record.endDate}`;
-                if (record.reason)  displayDetails += `\n事由：${record.reason}`;
-                if (record.agent)   displayDetails += `\n代理人：${record.agent}`;
+                if (record.reason) displayDetails += `\n事由：${record.reason}`;
+                if (record.agent) displayDetails += `\n代理人：${record.agent}`;
             } else {
                 title = `[簽] ${shortName}`;
                 displayDetails += `\n打卡時間：${record.time || '無紀錄'}`;
@@ -101,9 +106,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 allDay: true, // 統一全天顯示格狀
                 backgroundColor: bgColor,
                 extendedProps: {
-                    details: displayDetails // 儲存細節給 Modal 顯示
+                    details: displayDetails, // 儲存細節給 Modal 顯示
+                    originalName: record.name  // 保留原始名稱作為篩選條件
                 }
             };
+        });
+    }
+
+    // 建立與處理篩選器邏輯
+    function buildUserFilter(events) {
+        let filterDrop = document.getElementById('userFilter');
+        if (!filterDrop) {
+            filterDrop = document.createElement('select');
+            filterDrop.id = 'userFilter';
+            filterDrop.className = 'fc-user-filter';
+
+            // 將 select 塞入右側工具列區塊 (緊鄰視圖切換按鈕)
+            const rightChunk = document.querySelector('.fc-toolbar-chunk:nth-child(3)');
+            if (rightChunk) {
+                // 讓 select 放置在按鈕列表的最左側
+                rightChunk.insertBefore(filterDrop, rightChunk.firstChild);
+            }
+
+            filterDrop.addEventListener('change', (e) => {
+                const selectedName = e.target.value;
+                calendar.removeAllEventSources();
+                if (selectedName === 'all') {
+                    calendar.addEventSource(allEvents);
+                } else {
+                    const filtered = allEvents.filter(ev => ev.extendedProps.originalName === selectedName);
+                    calendar.addEventSource(filtered);
+                }
+            });
+        }
+
+        // 抽取不重複的 LINE 名稱
+        const uniqueNames = [...new Set(events.map(ev => ev.extendedProps.originalName))].filter(Boolean);
+        uniqueNames.sort();
+
+        // 渲染選單內容
+        filterDrop.innerHTML = '<option value="all">全部人員</option>';
+        uniqueNames.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            filterDrop.appendChild(opt);
         });
     }
 
@@ -129,18 +176,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Modal 控制邏輯
-    window.showModal = function(eventObj) {
+    window.showModal = function (eventObj) {
         document.getElementById('modalTitle').innerText = eventObj.title;
         document.getElementById('modalBody').innerText = eventObj.extendedProps.details || '無詳細資料';
         document.getElementById('detailModal').style.display = 'flex';
     };
 
-    window.closeModal = function() {
+    window.closeModal = function () {
         document.getElementById('detailModal').style.display = 'none';
     };
 
     // 點擊背景關閉 Modal
-    document.getElementById('detailModal').addEventListener('click', function(e) {
+    document.getElementById('detailModal').addEventListener('click', function (e) {
         if (e.target === this) closeModal();
     });
 
