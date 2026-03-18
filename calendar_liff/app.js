@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 bgColor = '#FF9800'; // 橘色代表請假
                 title = `[假] ${record.name}`;
                 displayDetails += `\n請假期間：${record.startDate} ~ ${record.endDate}`;
+                if (record.reason)  displayDetails += `\n事由：${record.reason}`;
+                if (record.agent)   displayDetails += `\n代理人：${record.agent}`;
             } else {
                 title = `[簽] ${record.name}`;
                 displayDetails += `\n打卡時間：${record.time || '無紀錄'}`;
