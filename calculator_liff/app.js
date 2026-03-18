@@ -152,7 +152,8 @@ function downloadScreenshot(type, event) {
         fileName = '買方稅費試算結果.png';
     }
     
-    const targetElement = document.getElementById(targetId);
+    // 改成擷取整個 App，包含上方的標題與頁籤
+    const targetElement = document.querySelector('.app-container');
     if (!targetElement) return;
 
     let btn = null;
@@ -168,12 +169,20 @@ function downloadScreenshot(type, event) {
     const btnDisplay = btn ? btn.style.display : '';
     if (btn) btn.style.display = 'none';
 
+    document.body.classList.add('capturing');
+    // 確保目標元素有背景，否則部分 iOS 會有透明度 bug
+    const originalBg = targetElement.style.backgroundColor;
+    targetElement.style.backgroundColor = '#f4f7f6';
+
     html2canvas(targetElement, {
-        scale: 2, 
+        scale: 2,
+        logging: false, 
         useCORS: true,
         backgroundColor: "#f4f7f6"
     }).then(canvas => {
         // 截圖完把按鈕顯示回來
+        document.body.classList.remove('capturing');
+        targetElement.style.backgroundColor = originalBg;
         if (btn) {
             btn.style.display = btnDisplay;
             btn.innerText = originText;
@@ -198,6 +207,8 @@ function downloadScreenshot(type, event) {
         document.body.removeChild(a);
         
     }).catch(err => {
+        document.body.classList.remove('capturing');
+        targetElement.style.backgroundColor = originalBg;
         console.error("截圖失敗", err);
         alert("產生圖片失敗，請稍後再試！");
         if (btn) {

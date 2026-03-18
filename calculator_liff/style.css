@@ -303,10 +303,16 @@ body {
     cursor: not-allowed;
 }
 
-.send-liff-btn:before {
-    content: "🖼️";
-}
+
 
 .send-liff-btn:hover {
     background: #000;
+}
+
+
+/* 修正 iOS html2canvas 截圖變白的問題 (移除 box-shadow 與特殊繪製機制) */
+body.capturing * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transform: none !important;
 }
