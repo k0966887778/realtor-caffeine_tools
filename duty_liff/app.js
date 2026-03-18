@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIFF_ID = "2009511611-TcLF758l";
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwp7iUSwjtULNPApiQwJBFyIqF46zOg_kDuPUebs7rKW2-kWhbdhl8Af00on5GZHfuJAA/exec";
 
-    let userProfile = { userId: "", displayName: "待載入..." };
+    let userProfile = { userId: "", displayName: "載入中..." };
     let selectedDates = new Set();
     let calendar;
     let selectedEventRowIndex = null; // 用來儲存被點擊事件在試算表中的列數
@@ -32,16 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 'today'
         },
         height: 'auto',
-        dayCellContent: function(arg) {
+        dayCellContent: function (arg) {
             return arg.dayNumberText.replace('日', '');
         },
-        dayHeaderContent: function(arg) {
+        dayHeaderContent: function (arg) {
             return arg.text.replace('週', '');
         },
-        dateClick: function(info) {
+        dateClick: function (info) {
             toggleDate(info.dateStr);
         },
-        eventClick: function(info) {
+        eventClick: function (info) {
             // 點擊事件顯示 Modal
             showModal(info.event);
         }
@@ -49,15 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
     calendar.render();
 
     // 1.5 切換排班模式按鈕
-    document.getElementById('toggleEditBtn').addEventListener('click', function() {
+    document.getElementById('toggleEditBtn').addEventListener('click', function () {
         const formContainer = document.getElementById('editFormContainer');
         if (formContainer.style.display === 'none') {
             formContainer.style.display = 'block';
-            this.innerText = '隱藏排班表單';
+            this.innerText = '瀏覽模式';
             calendar.updateSize(); // 讓日曆重新適應大小
         } else {
             formContainer.style.display = 'none';
-            this.innerText = '✏️ 進入排班模式';
+            this.innerText = '編輯模式';
         }
     });
 
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         backgroundColor: color,
                         borderColor: color,
                         extendedProps: {
-                            details: `班別：${r.shift}\n值班人：${r.name}\n編輯人：${r.editor}\n填寫時間：${r.timestamp}`,
+                            details: `班別：${r.shift}\n值班者：${r.name}\n編輯者：${r.editor}\n編輯時間：${r.timestamp}`,
                             rowIndex: r.rowIndex // 記錄列數供刪除使用
                         }
                     };
@@ -118,32 +118,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 calendar.addEventSource(events);
             }
         } catch (err) {
-            console.error("無法載入排班記錄", err);
+            console.error("無法載入班表", err);
         }
     }
 
     // 4. Modal 控制邏輯
-    window.showModal = function(eventObj) {
+    window.showModal = function (eventObj) {
         document.getElementById('modalTitle').innerText = eventObj.title;
         document.getElementById('modalBody').innerText = eventObj.extendedProps.details || '無詳細資料';
         selectedEventRowIndex = eventObj.extendedProps.rowIndex;
         document.getElementById('detailModal').style.display = 'flex';
     };
 
-    window.closeModal = function() {
+    window.closeModal = function () {
         document.getElementById('detailModal').style.display = 'none';
         selectedEventRowIndex = null;
     };
 
-    document.getElementById('detailModal').addEventListener('click', function(e) {
+    document.getElementById('detailModal').addEventListener('click', function (e) {
         if (e.target === this) closeModal();
     });
 
     // 5. 執行刪除動作
     document.getElementById('deleteBtn').addEventListener('click', async () => {
         if (!selectedEventRowIndex) return;
-        
-        if (!confirm('確定要刪除這筆排班資料嗎？')) return;
+
+        if (!confirm('確定要刪除這筆資料嗎？')) return;
 
         const btn = document.getElementById('deleteBtn');
         const originalText = btn.innerText;

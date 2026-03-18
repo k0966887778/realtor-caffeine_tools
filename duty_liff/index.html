@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>輪值表管理 - 日日有桔</title>
+    <title>房仲咖啡因｜輪值表管理系統</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
+
 <body>
     <div class="app-container">
         <header class="app-header">
-            <h1>輪值表管理</h1>
-            <p>點擊事件可查看或刪除。要新增排班請點擊下方按鈕</p>
+            <h1>輪值表管理系統</h1>
+            <p>點選可查看或刪除<br>點選下方按鈕新增班表</p>
         </header>
 
         <div class="calendar-card">
             <div id="calendar"></div>
-            
+
             <button id="toggleEditBtn" class="primary-btn" style="margin-top: 20px; background-color: #5C6BC0;">
-                ✏️ 進入排班模式
+                編輯模式
             </button>
         </div>
 
         <div class="calc-form" id="editFormContainer" style="display: none;">
             <form id="dutyForm">
                 <div class="input-group">
-                    <label for="shiftType">1. 班別 (早/中/晚)</label>
+                    <label for="shiftType">班別</label>
                     <select id="shiftType" name="shiftType" required>
-                        <option value="">請選擇班別</option>
+                        <option value="">請選擇</option>
                         <option value="早班">早班</option>
                         <option value="中班">中班</option>
                         <option value="晚班">晚班</option>
@@ -37,13 +39,13 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="dutyName">2. 值班同仁姓名</label>
-                    <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="請輸入值班人" required>
+                    <label for="dutyName">2. 值班者</label>
+                    <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="請輸入值班者姓名" required>
                     <datalist id="staffList"></datalist>
                 </div>
 
                 <div class="input-group">
-                    <label for="editorName">3. 編輯人 (助理姓名)</label>
+                    <label for="editorName">3. 編輯者</label>
                     <input type="text" id="editorName" name="editorName" placeholder="請輸入您的姓名" required>
                 </div>
 
@@ -52,13 +54,13 @@
                     <div id="selectedDateList" class="date-tags"></div>
                 </div>
 
-                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">點擊日曆日期來選擇排班日。</p>
+                <p style="font-size: 13px; color: #666; margin-bottom: 10px;">點擊日期來多選排班日</p>
                 <button type="submit" id="submitBtn" class="primary-btn" disabled>儲存排班資料</button>
             </form>
         </div>
 
         <div id="statusMsg" class="status-msg hidden"></div>
-        
+
         <footer class="app-footer">
             <p id="profileBox">正在載入使用者資料...</p>
         </footer>
@@ -70,7 +72,7 @@
             <h3 id="modalTitle">排班詳情</h3>
             <div id="modalBody" class="modal-body"></div>
             <div class="modal-actions">
-                <button id="deleteBtn" class="delete-btn">🗑 刪除此筆排班</button>
+                <button id="deleteBtn" class="delete-btn">刪除</button>
                 <button onclick="closeModal()" class="close-btn">關閉</button>
             </div>
         </div>
@@ -78,4 +80,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>
