@@ -6,16 +6,14 @@
     <title>輪值表管理 - 日日有桔</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-    <!-- FullCalendar SDK -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-    <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
     <div class="app-container">
         <header class="app-header">
             <h1>輪值表管理</h1>
-            <p>點擊日曆選擇多個日期進行排班</p>
+            <p>點擊日曆日期新增排班，點擊事件可查看或刪除</p>
         </header>
 
         <div class="calendar-card">
@@ -25,13 +23,23 @@
         <div class="calc-form">
             <form id="dutyForm">
                 <div class="input-group">
-                    <label for="dutyName">1. 值班同仁姓名</label>
-                    <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="輸入或選擇姓名" required>
+                    <label for="shiftType">1. 班別 (早/中/晚)</label>
+                    <select id="shiftType" name="shiftType" required>
+                        <option value="">請選擇班別</option>
+                        <option value="早班">早班</option>
+                        <option value="中班">中班</option>
+                        <option value="晚班">晚班</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="dutyName">2. 值班同仁姓名</label>
+                    <input type="text" id="dutyName" name="dutyName" list="staffList" placeholder="請輸入值班人" required>
                     <datalist id="staffList"></datalist>
                 </div>
 
                 <div class="input-group">
-                    <label for="editorName">2. 編輯人 (助理姓名)</label>
+                    <label for="editorName">3. 編輯人 (助理姓名)</label>
                     <input type="text" id="editorName" name="editorName" placeholder="請輸入您的姓名" required>
                 </div>
 
@@ -50,6 +58,19 @@
             <p id="profileBox">正在載入使用者資料...</p>
         </footer>
     </div>
+
+    <!-- 事件詳情 Modal -->
+    <div id="detailModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h3 id="modalTitle">排班詳情</h3>
+            <div id="modalBody" class="modal-body"></div>
+            <div class="modal-actions">
+                <button id="deleteBtn" class="delete-btn">🗑 刪除此筆排班</button>
+                <button onclick="closeModal()" class="close-btn">關閉</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

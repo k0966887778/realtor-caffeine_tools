@@ -1,11 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 【重要】請替換為您在 LINE Developers Console 申請的 LIFF ID 與 GAS 部署連結
     const LIFF_ID = "2009511611-TcLF758l";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxXZwCExk4Wn2Cb2yZUpH0hUY8ssBforEN8dtnk11601K6DRJLPWJDoW40pxDeKP0yMLw/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwS1KkdPAsmnhY2aH7ATHWDTRl8iMIM29vGTGc67DS7hzPiUMCRcvXZgBjZURAWvV4W5w/exec";
 
     let userProfile = { userId: "", displayName: "待載入..." };
     let selectedDates = new Set();
     let calendar;
+    let selectedEventRowIndex = null; // 用來儲存被點擊事件在試算表中的列數
+
+    // 班別顏色
+    const shiftColors = {
+        '早班': '#06C755',
+        '中班': '#FF9800',
+        '晚班': '#5C6BC0'
+    };
+
+    // 如果姓名是 3 個字，只顯示後 2 個字（名）
+    function formatName(name) {
+        if (!name) return '';
+        const n = name.trim();
+        return n.length === 3 ? n.slice(1) : n;
+    }
 
     // 1. 初始化日曆
     const calendarEl = document.getElementById('calendar');
@@ -18,33 +32,27 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 'today'
         },
         height: 'auto',
-        selectable: false, // 我們手動處理點擊邏輯
         dateClick: function(info) {
             toggleDate(info.dateStr);
         },
-        dayCellDidMount: function(info) {
-            // 每次渲染時檢查是否已被選中
-            if (selectedDates.has(info.date.toISOString().split('T')[0])) {
-                info.el.classList.add('selected-day');
-            }
+        eventClick: function(info) {
+            // 點擊事件顯示 Modal
+            showModal(info.event);
         }
     });
     calendar.render();
 
-    // 切換日期選中狀態
+    // 2. 切換選取日期
     function toggleDate(dateStr) {
         if (selectedDates.has(dateStr)) {
             selectedDates.delete(dateStr);
         } else {
             selectedDates.add(dateStr);
         }
-        
-        // 更新 UI
-        updateUI();
+        updateSelectionUI();
     }
 
-    function updateUI() {
-        // 重新渲染日曆以更新樣式
+    function updateSelectionUI() {
         const allDayEls = document.querySelectorAll('.fc-daygrid-day');
         allDayEls.forEach(el => {
             const date = el.getAttribute('data-date');
@@ -54,25 +62,102 @@ document.addEventListener('DOMContentLoaded', () => {
                 el.classList.remove('selected-day');
             }
         });
-
-        // 更新選擇資訊
         document.getElementById('dateCount').innerText = selectedDates.size;
         const listEl = document.getElementById('selectedDateList');
         listEl.innerHTML = '';
-        
-        // 排序並顯示標籤
         Array.from(selectedDates).sort().forEach(date => {
             const tag = document.createElement('span');
             tag.className = 'date-tag';
             tag.innerText = date;
             listEl.appendChild(tag);
         });
-
-        // 控制按鈕狀態
         document.getElementById('submitBtn').disabled = selectedDates.size === 0;
     }
 
-    // 2. 初始化 LIFF
+    // 3. 從 GAS 讀取既有排班資料
+    async function fetchDutyRecords() {
+        try {
+            const response = await fetch(`${GAS_WEB_APP_URL}?action=get_duty_records`);
+            const data = await response.json();
+            if (data && data.records) {
+                calendar.getEventSources().forEach(s => s.remove()); // 清除舊資料
+                const events = data.records.map(r => {
+                    const name = formatName(r.name);
+                    const color = shiftColors[r.shift] || '#607D8B';
+                    return {
+                        title: `${r.shift} ${name}`,
+                        start: r.date,
+                        allDay: true,
+                        backgroundColor: color,
+                        borderColor: color,
+                        extendedProps: {
+                            details: `班別：${r.shift}\n值班人：${r.name}\n編輯人：${r.editor}\n填寫時間：${r.timestamp}`,
+                            rowIndex: r.rowIndex // 記錄列數供刪除使用
+                        }
+                    };
+                });
+                calendar.addEventSource(events);
+            }
+        } catch (err) {
+            console.error("無法載入排班記錄", err);
+        }
+    }
+
+    // 4. Modal 控制邏輯
+    window.showModal = function(eventObj) {
+        document.getElementById('modalTitle').innerText = eventObj.title;
+        document.getElementById('modalBody').innerText = eventObj.extendedProps.details || '無詳細資料';
+        selectedEventRowIndex = eventObj.extendedProps.rowIndex;
+        document.getElementById('detailModal').style.display = 'flex';
+    };
+
+    window.closeModal = function() {
+        document.getElementById('detailModal').style.display = 'none';
+        selectedEventRowIndex = null;
+    };
+
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // 5. 執行刪除動作
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+        if (!selectedEventRowIndex) return;
+        
+        if (!confirm('確定要刪除這筆排班資料嗎？')) return;
+
+        const btn = document.getElementById('deleteBtn');
+        const originalText = btn.innerText;
+        btn.innerText = '刪除中...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "delete_duty",
+                    rowIndex: selectedEventRowIndex,
+                    userId: userProfile.userId
+                })
+            });
+            const result = await response.json();
+
+            if (result.status === "success") {
+                showStatus("🗑 已成功刪除該排班。", "success");
+                closeModal();
+                fetchDutyRecords(); // 重新讀取並刷新日曆
+            } else {
+                showStatus("⚠️ 刪除失敗：" + result.message, "error");
+            }
+        } catch (err) {
+            showStatus("❌ 刪除時發生錯誤，請檢查網路。", "error");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // 6. 初始化 LIFF
     async function initLiff() {
         const profileBox = document.getElementById('profileBox');
         try {
@@ -82,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 userProfile = { userId: profile.userId, displayName: profile.displayName };
                 profileBox.innerText = `目前使用者：${userProfile.displayName}`;
                 fetchStaffNames();
+                fetchDutyRecords();
             } else {
                 liff.login();
             }
@@ -91,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 抓取歷史姓名
+    // 7. 讀取歷史人員名單
     async function fetchStaffNames() {
         const datalist = document.getElementById('staffList');
         try {
@@ -110,17 +196,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 3. 提交表單
+    // 8. 提交表單
     document.getElementById('dutyForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         const statusMsg = document.getElementById('statusMsg');
-        
+
         const payload = {
             action: "save_duty",
             userId: userProfile.userId,
             userName: userProfile.displayName,
-            dutyDates: Array.from(selectedDates), // 送出日期陣列
+            dutyDates: Array.from(selectedDates),
+            shiftType: document.getElementById('shiftType').value,
             dutyName: document.getElementById('dutyName').value,
             editorName: document.getElementById('editorName').value
         };
@@ -137,15 +224,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.status === "success") {
-                showStatus("✅ 儲存成功！資料已批次寫入試算表。", "success");
+                showStatus(`✅ 儲存成功！共 ${result.count} 筆資料已寫入。`, "success");
                 selectedDates.clear();
-                updateUI();
+                updateSelectionUI();
                 document.getElementById('dutyForm').reset();
+                fetchDutyRecords(); // 重新載入日曆資料
             } else {
                 showStatus("⚠️ 錯誤：" + result.message, "error");
             }
         } catch (err) {
-            showStatus("❌ 儲存失敗，請檢查 GAS 連結", "error");
+            showStatus("❌ 儲存失敗，請檢查網路", "error");
         } finally {
             btn.disabled = false;
             btn.innerText = "儲存排班資料";
