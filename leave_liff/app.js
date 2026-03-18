@@ -3,28 +3,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const LIFF_ID = "2009511611-QGXSdutf";
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYR5WeGyLjuEqE6OWb3TJE_H3iu3pS67S7ouHHX1GsrJOFIl_irnCYfiQjYtJp11a7Kg/exec";
 
-    // 暫存的本地使用者資料，實際上線會由 LIFF 取得
+    // 暫存的本地使用者資料
     let userProfile = { userId: "測試ID", displayName: "王大明" }; 
+    let isLiffReady = false;
 
     // 1. 初始化 LIFF
     async function initLiff() {
+        const profileBox = document.getElementById('profileBox');
+        
         // 若 LIFF ID 尚未設定，退回測試模式
         if (LIFF_ID === "YOUR_LIFF_ID") {
-            document.getElementById('profileBox').innerText = `申請人：${userProfile.displayName}（測試模式）`;
+            profileBox.innerText = `申請人：${userProfile.displayName}（測試模式）`;
+            isLiffReady = true;
             return;
         }
+
         try {
             await liff.init({ liffId: LIFF_ID });
+            
             if (liff.isLoggedIn()) {
                 const profile = await liff.getProfile();
                 userProfile = { userId: profile.userId, displayName: profile.displayName };
+                profileBox.innerText = `申請人：${userProfile.displayName}`;
+                isLiffReady = true;
             } else {
+                // 未登入則導向登入頁面
                 liff.login();
             }
-            document.getElementById('profileBox').innerText = `申請人：${userProfile.displayName}`;
         } catch (err) {
             console.error("LIFF 初始化失敗", err);
-            document.getElementById('profileBox').innerText = `載入失敗，請在 LINE 內開啟此頁面`;
+            profileBox.innerText = `載入失敗：${err.message || '請在 LINE 內開啟'}`;
+            // 彈出錯誤訊息幫助偵錯
+            alert("LIFF 初始化出錯：" + err.message);
         }
     }
     
@@ -34,13 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('leaveForm').addEventListener('submit', (e) => {
         e.preventDefault(); // 阻止原生表單跳轉
         
+        if (!isLiffReady) {
+            alert("⚠️ 個人資料尚未載入完成，請稍候。若持續失敗，請確認是否在 LINE 內開啟。");
+            return;
+        }
+
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert("⚠️ 請填寫開始與結束日期。");
+            return;
+        }
+
         // 整理要傳給後端 GAS 的 JSON Payload
         const payload = {
             action: "leave_application",
             userId: userProfile.userId,
             userName: userProfile.displayName,
-            startDate: document.getElementById('startDate').value,
-            endDate: document.getElementById('endDate').value,
+            startDate: startDate,
+            endDate: endDate,
             leaveType: document.getElementById('leaveType').value,
             reason: document.getElementById('reason').value,
             agentName: document.getElementById('agentName').value
