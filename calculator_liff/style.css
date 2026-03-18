@@ -1,0 +1,267 @@
+:root {
+    --primary-color: #06C755;
+    --primary-dark: #05a044;
+    --bg-color: #f4f7f6;
+    --card-bg: #ffffff;
+    --text-main: #333333;
+    --text-muted: #777777;
+    --border-radius: 16px;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.app-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 20px;
+}
+
+.app-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.app-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.app-header p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.tabs-nav {
+    display: flex;
+    justify-content: space-between;
+    background: #e9ecef;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    background: var(--card-bg);
+    color: var(--primary-dark);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.calc-form {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.input-grid .input-group {
+    margin-bottom: 0;
+}
+
+/* 在較小螢幕上可以考慮變回單行，但為了符合需求先保持並排 */
+@media (max-width: 400px) {
+    .input-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #444;
+}
+
+.input-group i {
+    font-weight: 400;
+    font-size: 12px;
+    color: #888;
+    font-style: normal;
+    margin-left: 4px;
+}
+
+.input-group input, 
+.input-group select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fdfdfd;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.input-group input:focus, 
+.input-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: #fff;
+}
+
+.primary-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(6, 199, 85, 0.3);
+    transition: background 0.3s, transform 0.1s;
+    margin-top: 10px;
+}
+
+.primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.primary-btn:active {
+    transform: scale(0.98);
+}
+
+.result-card {
+    background: var(--card-bg);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border-top: 5px solid var(--primary-color);
+    animation: fadeIn 0.4s ease-out;
+}
+
+.result-card h3 {
+    margin-bottom: 20px;
+    font-size: 18px;
+    text-align: center;
+    color: var(--text-main);
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* 讓上下對齊 */
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 15px;
+}
+
+.result-row > span {
+    flex-grow: 1; /* 讓標頭佔據剩餘空間，推動數字向右 */
+}
+
+.result-row > span i {
+    font-size: 13px;
+    color: #888;
+    font-style: normal;
+    margin-left: 4px;
+}
+
+.result-row > strong {
+    text-align: right;
+    min-width: 100px; /* 給予固定或最小寬度讓數字個位數可以對齊 */
+    margin-right: 8px; /* 和「元」之間留一點空隙 */
+}
+
+.result-row:last-of-type {
+    border-bottom: none;
+}
+
+.result-row:not(.highlight) strong {
+    font-weight: 500;
+}
+
+.result-row.highlight {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-dark);
+    margin-top: 8px;
+    padding-top: 16px;
+}
+
+.result-note {
+    font-size: 12px;
+    color: #999;
+    text-align: right;
+    margin-top: 10px;
+}
+
+.send-liff-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 14px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.send-liff-btn:before {
+    content: "💬";
+}
+
+.send-liff-btn:hover {
+    background: #000;
+}
