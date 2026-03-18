@@ -135,25 +135,75 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ------------------------------
-   LIFF 發送回聊天室
+   下載截圖功能
    ------------------------------ */
-function sendLiffMessage(type) {
-    const textData = window.currentResult[type];
-    if (!textData) return;
+function downloadScreenshot(type, event) {
+    let targetId = '';
+    let fileName = '';
+    
+    if (type === 'mortgage') {
+        targetId = 'mortgage';
+        fileName = '房貸試算結果.png';
+    } else if (type === 'sell') {
+        targetId = 'sellTax';
+        fileName = '賣方稅費試算結果.png';
+    } else if (type === 'buy') {
+        targetId = 'buyTax';
+        fileName = '買方稅費試算結果.png';
+    }
+    
+    const targetElement = document.getElementById(targetId);
+    if (!targetElement) return;
 
-    // 檢查是否在 LINE App 內開啟，若無則跳出 Alert (測試用)
-    if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) {
-        alert("此功能需在 LINE App 中開啟才能傳送訊息到聊天室唷！\n\n預計傳送內容：\n" + textData);
-        return;
+    let btn = null;
+    let originText = '';
+    if (event && event.currentTarget) {
+        btn = event.currentTarget;
+        originText = btn.innerText;
+        btn.innerText = '處理中...';
+        btn.disabled = true;
     }
 
-    liff.sendMessages([{
-        type: 'text',
-        text: textData
-    }]).then(() => {
-        liff.closeWindow(); // 傳送完畢，關閉 LIFF 網頁
-    }).catch((err) => {
-        console.error('LIFF send Error: ', err);
-        alert('發生錯誤無法傳送：' + err);
+    // 將目標元素內容暫存，先把按鈕藏起來不要截到按鈕
+    const btnDisplay = btn ? btn.style.display : '';
+    if (btn) btn.style.display = 'none';
+
+    html2canvas(targetElement, {
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: "#f4f7f6"
+    }).then(canvas => {
+        // 截圖完把按鈕顯示回來
+        if (btn) {
+            btn.style.display = btnDisplay;
+            btn.innerText = originText;
+            btn.disabled = false;
+        }
+
+        const imgData = canvas.toDataURL("image/png");
+        
+        // 為了支援手機瀏覽器 (尤其是 LINE in-app browser) 更好的下載體驗
+        if (navigator.userAgent.match(/Line/i)) {
+            // 如果在 LINE 裡面，直接另開視窗顯示圖片，讓使用者長按儲存 (因 LINE 阻擋 a.download)
+            document.write('<img src="' + imgData + '" style="width:100%;"><br><div style="text-align:center; padding:20px; font-family:sans-serif; color:#666;">請長按上方圖片儲存</div>');
+            document.close();
+            return;
+        }
+
+        const a = document.createElement('a');
+        a.href = imgData;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+    }).catch(err => {
+        console.error("截圖失敗", err);
+        alert("產生圖片失敗，請稍後再試！");
+        if (btn) {
+            btn.style.display = btnDisplay;
+            btn.innerText = originText;
+            btn.disabled = false;
+        }
     });
 }

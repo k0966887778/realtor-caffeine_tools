@@ -54,17 +54,17 @@
                     <h3>試算結果</h3>
                     <div class="result-row">
                         <span>預估自備款：</span>
-                        <strong id="res-downPayment">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-downPayment">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>貸款總額：</span>
-                        <strong id="res-loanAmount">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-loanAmount">0</strong> 元</span>
                     </div>
                     <div class="result-row highlight">
                         <span>預估月付金：</span>
-                        <strong id="res-monthlyPay">0</strong> 元/月
+                        <span class=\"result-value\"><strong id="res-monthlyPay">0</strong> 元</span>/月
                     </div>
-                    <button class="send-liff-btn" onclick="sendLiffMessage('mortgage')">發送結果至聊天室</button>
+                    <button class="send-liff-btn" onclick="downloadScreenshot('mortgage', event)">儲存試算結果</button>
                 </div>
             </section>
 
@@ -124,28 +124,28 @@
                     <h3>試算結果</h3>
                     <div class="result-row">
                         <span>預估房地合一稅 <i>(獲利 × 稅率)</i>：</span>
-                        <strong id="res-houseTax">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-houseTax">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>仲介費 <i>(成交價 × %)</i>：</span>
-                        <strong id="res-sellAgentFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-sellAgentFee">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>履保費 <i>(賣價 × %)</i>：</span>
-                        <strong id="res-sellEscrowFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-sellEscrowFee">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>代書費：</span>
-                        <strong id="res-sellScrivenerFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-sellScrivenerFee">0</strong> 元</span>
                     </div>
                     <div class="result-row highlight">
                         <span style="display: flex; flex-direction: column;">
                             預估實拿金額：
                             <i style="color: grey; font-size: 13px; font-weight: normal; margin-top: 4px;">(已扣除仲介費、履保費、代書費與貸款本金餘額)</i>
                         </span>
-                        <strong id="res-realIncome">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-realIncome">0</strong> 元</span>
                     </div>
-                    <button class="send-liff-btn" onclick="sendLiffMessage('sell')">發送結果至聊天室</button>
+                    <button class="send-liff-btn" onclick="downloadScreenshot('sell', event)">儲存試算結果</button>
                 </div>
             </section>
 
@@ -171,41 +171,45 @@
                     <h3>試算結果</h3>
                     <div class="result-row">
                         <span>契稅 <i>(房屋現值 × 6%)</i>：</span>
-                        <strong id="res-deedTax">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-deedTax">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>印花稅 <i>(成交價 × 0.1%)</i>：</span>
-                        <strong id="res-stampTax">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-stampTax">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>仲介費 <i>(成交價 × 2%)</i>：</span>
-                        <strong id="res-buyAgentFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-buyAgentFee">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>規費 <i>(成交價 × 0.1%)</i>：</span>
-                        <strong id="res-buyRegisterFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-buyRegisterFee">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>履保費 <i>(成交價 × 0.06%)</i>：</span>
-                        <strong id="res-buyEscrowFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-buyEscrowFee">0</strong> 元</span>
                     </div>
                     <div class="result-row">
                         <span>代書費：</span>
-                        <strong id="res-buyScrivenerFee">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-buyScrivenerFee">0</strong> 元</span>
                     </div>
                     <div class="result-row highlight">
                         <span style="display: flex; flex-direction: column;">
                             衍生總花費預估：
                             <i style="color: grey; font-size: 13px; font-weight: normal; margin-top: 4px;">(包含仲介、契稅、印花、規費、履保與代書費)</i>
                         </span>
-                        <strong id="res-totalExtraCost">0</strong> 元
+                        <span class=\"result-value\"><strong id="res-totalExtraCost">0</strong> 元</span>
                     </div>
-                    <button class="send-liff-btn" onclick="sendLiffMessage('buy')">發送結果至聊天室</button>
+                    <button class="send-liff-btn" onclick="downloadScreenshot('buy', event)">儲存試算結果</button>
                 </div>
             </section>
         </main>
     </div>
 
+    <!-- 引入 html2canvas -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 引入 html2canvas -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <!-- 引入 LIFF SDK -->
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="./app.js"></script>

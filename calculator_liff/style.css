@@ -211,24 +211,64 @@ body {
     margin-left: 4px;
 }
 
-.result-row > strong {
+.result-row .result-value {
     text-align: right;
     min-width: 100px; /* 給予固定或最小寬度讓數字個位數可以對齊 */
+    font-weight: 500;
+}
+
+.result-row.highlight .result-value {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--primary-dark);
+}
+
+.result-row .result-value strong {
     margin-right: 8px; /* 和「元」之間留一點空隙 */
+}
+
+/* 針對小螢幕的手機版，做響應式換行與字級調整 */
+@media (max-width: 480px) {
+    .result-row {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 0;
+    }
+    
+    .result-row > span {
+        margin-bottom: 6px;
+        width: 100%;
+        line-height: 1.4;
+    }
+
+    .result-row > span i {
+        display: block; /* 在極小螢幕上讓備註換行 */
+        margin-left: 0;
+        margin-top: 2px;
+        font-size: 12px;
+    }
+
+    .result-row .result-value {
+        width: 100%;
+        text-align: right;
+        font-size: 16px;
+    }
+
+    .result-row.highlight {
+        padding-top: 12px;
+        margin-top: 4px;
+    }
+
+    .result-row.highlight .result-value {
+        font-size: 20px; /* 手機版稍微縮小總金額防止破版 */
+    }
 }
 
 .result-row:last-of-type {
     border-bottom: none;
 }
 
-.result-row:not(.highlight) strong {
-    font-weight: 500;
-}
-
 .result-row.highlight {
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--primary-dark);
     margin-top: 8px;
     padding-top: 16px;
 }
@@ -244,7 +284,7 @@ body {
     width: 100%;
     margin-top: 24px;
     padding: 14px;
-    background: #333;
+    background: #111;
     color: white;
     border: none;
     border-radius: 8px;
@@ -258,8 +298,13 @@ body {
     gap: 8px;
 }
 
+.send-liff-btn:disabled {
+    background: #aaa;
+    cursor: not-allowed;
+}
+
 .send-liff-btn:before {
-    content: "💬";
+    content: "🖼️";
 }
 
 .send-liff-btn:hover {
