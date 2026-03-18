@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 【重要】請替換為您在 LINE Developers Console 申請的 LIFF ID 與 GAS 部署連結
-    const LIFF_ID = "YOUR_DUTY_LIFF_ID"; 
+    const LIFF_ID = "2009511611-TcLF758l";
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyYR5WeGyLjuEqE6OWb3TJE_H3iu3pS67S7ouHHX1GsrJOFIl_irnCYfiQjYtJp11a7Kg/exec";
 
     let userProfile = { userId: "", displayName: "待載入..." };
