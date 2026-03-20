@@ -2,7 +2,7 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
 let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx1bOuv5kK3UeusguueCxWeCGqYvBTCGeN5XR8mYLq0nWWRj9SfycrqimOGfgTYDnHlig/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwSdi1YP82R0BmM5KdGcR7RxVlFiZH8j5X0-2Hs-Qz96b5b68P0k3nLYzIGDJRm6VADAQ/exec';
 
 // 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
 window.localShiftData = window.localShiftData || {};
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Handle shift changing
-    document.getElementById('shiftType').addEventListener('change', (e) => {
+    document.getElementById('shiftType').addEventListener('change', async (e) => {
         const shift = e.target.value;
         const selectedDateEl = document.querySelector('.week-day.selected');
         const date = selectedDateEl ? selectedDateEl.dataset.date : null;
@@ -289,25 +289,103 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('signInStatus').innerText = '';
             document.getElementById('handoverNotes').value = '';
             document.getElementById('arrangedTasks').value = '';
+            if (window.customerFormsManager) window.customerFormsManager.reset();
+            if (window.keyFormsManager) window.keyFormsManager.reset();
             return;
         }
 
-        // reload from memory if exists
-        const dayData = window.localShiftData[date] && window.localShiftData[date][shift];
-        if (dayData) {
-            dutyCheckInId = dayData.dutyCheckInId;
-            document.getElementById('signInStatus').innerText = `已載入本地暫存紀錄 (ID: ${dutyCheckInId})`;
-            document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
-            document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
-        } else {
-            dutyCheckInId = null;
-            document.getElementById('signInStatus').innerText = '新班別，請先簽到';
-            document.getElementById('handoverNotes').value = '';
-            document.getElementById('arrangedTasks').value = '';
-            // For simplicity, modifying shifts without reloading array data just resets them. 
-            // Mock preview doesn't dynamically populate customer forms yet, but we clear it to be safe.
-            if (window.customerFormsManager) window.customerFormsManager.reset();
-            if (window.keyFormsManager) window.keyFormsManager.reset();
+        document.getElementById('signInStatus').innerText = '正在讀取雲端紀錄...';
+        document.getElementById('handoverNotes').value = '';
+        document.getElementById('arrangedTasks').value = '';
+        if (window.customerFormsManager) window.customerFormsManager.reset();
+        if (window.keyFormsManager) window.keyFormsManager.reset();
+
+        try {
+            if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
+                // Return to local memory if preview mode
+                const dayData = window.localShiftData[date] && window.localShiftData[date][shift];
+                if (dayData) {
+                    dutyCheckInId = dayData.dutyCheckInId;
+                    document.getElementById('signInStatus').innerText = `已載入暫存紀錄 (ID: ${dutyCheckInId})`;
+                    document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
+                    document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
+                } else {
+                    dutyCheckInId = null;
+                    document.getElementById('signInStatus').innerText = '新班別，請先簽到';
+                }
+                return;
+            }
+
+            const response = await fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'get_single_duty_record', date, shiftType: shift })
+            });
+            const result = await response.json();
+            
+            if (result.success && result.record) {
+                const rec = result.record;
+                dutyCheckInId = rec.dutyCheckInId;
+                document.getElementById('signInStatus').innerText = `已載入雲端紀錄 (ID: ${dutyCheckInId})`;
+                document.getElementById('handoverNotes').value = rec.handoverNotes || '';
+                document.getElementById('arrangedTasks').value = rec.arrangedTasks || '';
+
+                // Load customers
+                if (rec.customers && rec.customers.length > 0 && window.customerFormsManager) {
+                    window.customerFormsManager.reset();
+                    rec.customers.forEach((c, idx) => {
+                        if (idx > 0) window.customerFormsManager.addPage();
+                        const page = window.customerFormsManager.pages[idx];
+                        if (page) {
+                            page.querySelector('.reg-date').value = c.regDate || '';
+                            page.querySelector('.registrant').value = c.registrant || '';
+                            
+                            const srcSelect = page.querySelector('.source-select');
+                            const srcOther = page.querySelector('.source-other');
+                            if (['電話','來店','LINE','網路','介紹'].includes(c.source)) {
+                                srcSelect.value = c.source;
+                                srcOther.classList.add('hidden');
+                            } else if (c.source) {
+                                srcSelect.value = '其他';
+                                srcOther.value = c.source;
+                                srcOther.classList.remove('hidden');
+                            }
+                            
+                            page.querySelector('.contact-phone').value = c.phone || '';
+                            page.querySelector('.inquiry-prop').value = c.prop || '';
+                            page.querySelector('.customer-need').value = c.need || '';
+                            page.querySelector('.status-select').value = c.status || '';
+                            page.querySelector('.remarks').value = c.remarks || '';
+                        }
+                    });
+                    window.customerFormsManager.switchPage(0);
+                }
+
+                // Load keys
+                if (rec.keys && rec.keys.length > 0 && window.keyFormsManager) {
+                    window.keyFormsManager.reset();
+                    rec.keys.forEach((k, idx) => {
+                        if (idx > 0) window.keyFormsManager.addPage();
+                        const page = window.keyFormsManager.pages[idx];
+                        if (page) {
+                            page.querySelector('.key-reg-time').value = k.regTime || '';
+                            page.querySelector('.borrower-name').value = k.borrower || '';
+                            page.querySelector('.prop-name').value = k.prop || '';
+                            page.querySelector('.key-number').value = k.keyNo || '';
+                            page.querySelector('.borrow-time').value = k.borrowTime || '';
+                            page.querySelector('.return-time').value = k.returnTime || '';
+                            page.querySelector('.handler-name').value = k.handler || '';
+                            page.querySelector('.confirmer-name').value = k.confirmer || '';
+                        }
+                    });
+                    window.keyFormsManager.switchPage(0);
+                }
+            } else {
+                dutyCheckInId = null;
+                document.getElementById('signInStatus').innerText = '新班別，未簽到';
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('signInStatus').innerText = '讀取失敗，請檢查網路';
         }
     });
 
