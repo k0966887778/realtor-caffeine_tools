@@ -4,6 +4,9 @@ let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
 let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx1bOuv5kK3UeusguueCxWeCGqYvBTCGeN5XR8mYLq0nWWRj9SfycrqimOGfgTYDnHlig/exec';
 
+// 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
+window.localShiftData = window.localShiftData || {};
+
 // 初始化 LIFF
 async function initializeLiff() {
     try {
@@ -46,11 +49,21 @@ function renderWeekCalendar() {
         monthDisplay.innerText = `${monday.getFullYear()}年 ${monday.getMonth() + 1}月`;
     }
 
-    // 這裡我們暫時用 mock 資料來模擬「已有值班紀錄」的日期與班別、名字
+    // 這裡用 localShiftData 來存放每個日期的各班別資料
     const mockDutyRecords = {};
-    // 假設今天有紀錄
-    const todayStr = new Date().toISOString().split('T')[0];
-    mockDutyRecords[todayStr] = '早 柏頴';
+    if (window.localShiftData) {
+        for (let date in window.localShiftData) {
+            let badges = [];
+            for (let shift in window.localShiftData[date]) {
+                const shiftPrefix = shift.substring(0, 1);
+                const name = window.localShiftData[date][shift].name || currentLineName;
+                badges.push(`${shiftPrefix} ${name.substring(0, 2)}`); // e.g. 早 柏頴
+            }
+            if (badges.length > 0) {
+                mockDutyRecords[date] = badges;
+            }
+        }
+    }
 
     // 判斷當下是否為本週，以決定預設選取日
     const realTodayStr = new Date().toDateString();
@@ -66,11 +79,11 @@ function renderWeekCalendar() {
 
         // 簡化顯示，使用數字日期
         const dateStr = d.getDate();
-        const dutyShiftName = mockDutyRecords[dateIso]; 
+        const dutyShiftNames = mockDutyRecords[dateIso]; 
         
         let badgeHtml = '';
-        if (dutyShiftName) {
-            badgeHtml = `<span class="duty-badge">${dutyShiftName}</span>`;
+        if (dutyShiftNames && dutyShiftNames.length > 0) {
+            badgeHtml = dutyShiftNames.map(name => `<span class="duty-badge">${name}</span>`).join('');
         } else {
             // 為了保持高度排版一致，塞個隱形徽章或空 div (這裡使用隱形)
             badgeHtml = `<span class="duty-badge" style="visibility: hidden;">無</span>`;
@@ -79,7 +92,9 @@ function renderWeekCalendar() {
         el.innerHTML = `
             <span class="day-label">${daysArr[i]}</span>
             <span class="date-number">${dateStr}</span>
-            ${badgeHtml}
+            <div class="duty-badges-container">
+                ${badgeHtml}
+            </div>
         `;
         
         // 預設選中邏輯：如果是今天則選中；如果不是本週，預設選中星期一
@@ -94,6 +109,16 @@ function renderWeekCalendar() {
             el.classList.add('selected');
             document.getElementById('addDutyBtn').style.display = 'block';
             document.getElementById('dutyRecordContainer').style.display = 'none'; // 換日期先藏起來
+            
+            // clear form when switching dates
+            document.getElementById('shiftType').value = "";
+            dutyCheckInId = null;
+            document.getElementById('signInStatus').innerText = '';
+            document.getElementById('handoverNotes').value = '';
+            document.getElementById('arrangedTasks').value = '';
+            
+            if (window.customerFormsManager) window.customerFormsManager.reset();
+            if (window.keyFormsManager) window.keyFormsManager.reset();
         });
 
         container.appendChild(el);
@@ -203,6 +228,14 @@ class DynamicFormManager {
             });
         }
     }
+
+    reset() {
+        this.container.innerHTML = '';
+        const allTabs = this.tabsContainer.querySelectorAll('.tab-btn:not(.add-btn)');
+        allTabs.forEach(t => t.remove());
+        this.pages = [];
+        this.addPage();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -243,6 +276,39 @@ document.addEventListener('DOMContentLoaded', () => {
         arrangedTasks.addEventListener('focus', function() {
             this.classList.remove('placeholder-style');
         });
+    });
+
+    // Handle shift changing
+    document.getElementById('shiftType').addEventListener('change', (e) => {
+        const shift = e.target.value;
+        const selectedDateEl = document.querySelector('.week-day.selected');
+        const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+        
+        if (!date || !shift) {
+            dutyCheckInId = null;
+            document.getElementById('signInStatus').innerText = '';
+            document.getElementById('handoverNotes').value = '';
+            document.getElementById('arrangedTasks').value = '';
+            return;
+        }
+
+        // reload from memory if exists
+        const dayData = window.localShiftData[date] && window.localShiftData[date][shift];
+        if (dayData) {
+            dutyCheckInId = dayData.dutyCheckInId;
+            document.getElementById('signInStatus').innerText = `已載入本地暫存紀錄 (ID: ${dutyCheckInId})`;
+            document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
+            document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
+        } else {
+            dutyCheckInId = null;
+            document.getElementById('signInStatus').innerText = '新班別，請先簽到';
+            document.getElementById('handoverNotes').value = '';
+            document.getElementById('arrangedTasks').value = '';
+            // For simplicity, modifying shifts without reloading array data just resets them. 
+            // Mock preview doesn't dynamically populate customer forms yet, but we clear it to be safe.
+            if (window.customerFormsManager) window.customerFormsManager.reset();
+            if (window.keyFormsManager) window.keyFormsManager.reset();
+        }
     });
 
     // Sign-in Button Mockup with actual fetching structure
@@ -368,6 +434,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (result.success) {
                 alert('所有紀錄儲存成功！');
+                
+                // Save locally so the calendar and form switching works
+                const selectedDateEl = document.querySelector('.week-day.selected');
+                const date = selectedDateEl ? selectedDateEl.dataset.date : new Date().toISOString().split('T')[0];
+                const shift = document.getElementById('shiftType').value;
+                
+                window.localShiftData[date] = window.localShiftData[date] || {};
+                window.localShiftData[date][shift] = {
+                    dutyCheckInId: dutyCheckInId,
+                    handoverNotes: handoverNotes,
+                    arrangedTasks: arrangedTasks,
+                    name: currentLineName
+                };
+                renderWeekCalendar(); // refresh badges
+
             } else {
                 alert('儲存失敗：' + result.error);
             }
