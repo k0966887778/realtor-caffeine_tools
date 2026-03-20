@@ -2,7 +2,7 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
 let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwFSgIyZhXKg8KZ1kxoVBabeVct2d3JMZYoADZIa1bP-MVxfQqLNr2Q7RQh1KWg938Ncg/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzQ9nlsq0PR7gQGgmyNnK5lTSBVdkOesz24Gr2HI_gGFfHB_RvVGAG_7O23BZKNIKT5TQ/exec';
 
 // 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
 window.localShiftData = window.localShiftData || {};
