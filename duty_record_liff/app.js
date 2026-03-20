@@ -2,7 +2,7 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
 let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwSdi1YP82R0BmM5KdGcR7RxVlFiZH8j5X0-2Hs-Qz96b5b68P0k3nLYzIGDJRm6VADAQ/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzvSj5NGiDVO3R2O7T1ZYtw3ASQkq9j2elNiWG1UuUUSEIVdzFfaKOi29qk9mIm7Vpz9g/exec';
 
 // 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
 window.localShiftData = window.localShiftData || {};
@@ -22,6 +22,29 @@ async function initializeLiff() {
         currentLineName = profile.displayName;
         
         document.getElementById('profileBox').innerText = `目前使用者：${currentLineName} (連線正常)`;
+
+        // 讀取月曆的歷史班表資料
+        if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+            try {
+                const res = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get_monthly_duty_records' })
+                });
+                const data = await res.json();
+                if (data.success && data.records) {
+                    data.records.forEach(rec => {
+                        window.localShiftData[rec.date] = window.localShiftData[rec.date] || {};
+                        window.localShiftData[rec.date][rec.shiftType] = {
+                            name: rec.name
+                        };
+                    });
+                    // 重新繪製月曆以顯示抓取回來的徽章
+                    renderWeekCalendar();
+                }
+            } catch(e) {
+                console.error('Failed to fetch calendar signs', e);
+            }
+        }
     } catch (err) {
         console.error('LIFF 初始化失敗', err);
         document.getElementById('profileBox').innerText = 'LIFF 載入失敗或正在本機預覽中';
@@ -173,14 +196,13 @@ class DynamicFormManager {
         this.pages.push(pageWrapper);
         this.container.appendChild(pageFragment);
 
-        if (index > 0) {
-            // Add a new tab button before the addBtn
-            const newTab = document.createElement('button');
-            newTab.className = 'tab-btn';
-            newTab.setAttribute('data-target', index);
-            newTab.textContent = index + 1;
-            this.tabsContainer.insertBefore(newTab, this.addBtn);
-        }
+        // ALWAYS Add a new tab button before the addBtn
+        const newTab = document.createElement('button');
+        newTab.className = 'tab-btn';
+        if (index === 0) newTab.classList.add('active'); // First tab active by default
+        newTab.setAttribute('data-target', index);
+        newTab.textContent = index + 1;
+        this.tabsContainer.insertBefore(newTab, this.addBtn);
 
         this.switchPage(index);
     }
