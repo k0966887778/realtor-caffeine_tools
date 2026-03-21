@@ -195,6 +195,7 @@ body {
 .input-group select,
 .input-group textarea {
     width: 100%;
+    min-width: 0;
     padding: 10px 12px;
     font-size: 14px;
     border: 1px solid #ddd;
@@ -222,10 +223,12 @@ body {
 
 .half {
     flex: 1;
+    min-width: 0;
 }
 
 .full {
     flex: 100%;
+    min-width: 0;
 }
 
 .placeholder-style::placeholder {
