@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     const LIFF_ID = "2009511611-QGXSdutf";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzRmewNbn4lczAqejxO1S0ksmUS8D8GcDWVzmEbgHP5pYGEXTK08NKeZtXcgeH7m0fXuA/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKBkE8rV-9C4yrWuuu0DypNgx4rPX1q1DUN6whgxDp4p8L2hiofsEKe2_2cpbXaQXLLA/exec";
 
     // 暫存的本地使用者資料
     let userProfile = { userId: "測試ID", displayName: "王大明" };
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 檢查 LIFF SDK 是否存在
         if (typeof liff === 'undefined') {
             profileBox.innerText = "❌ 錯誤：LIFF SDK 未載入，請檢查網路或 index.html 設定";
-            alert("錯誤：找不到 liff 物件，SDK 可能未成功載入。");
+            Swal.fire({ text: "錯誤：找不到 liff 物件，SDK 可能未成功載入。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const errorMsg = err.message || JSON.stringify(err);
             profileBox.innerText = `❌ 載入失敗：${errorMsg}`;
             // 更多細節供使用者反饋
-            alert("LIFF 初始化出錯！\n原因：" + errorMsg + "\n請確認 LINE Console 的 Endpoint URL 是否與目前網址完全相符。");
+            Swal.fire({ text: "LIFF 初始化出錯！\n原因：" + errorMsg + "\n請確認 LINE Console 的 Endpoint URL 是否與目前網址完全相符。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
         }
     }
 
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault(); // 阻止原生表單跳轉
 
         if (!isLiffReady) {
-            alert("⚠️ 個人資料尚未載入完成，請稍候。若持續失敗，請確認是否在 LINE 內開啟。");
+            Swal.fire({ text: "⚠️ 個人資料尚未載入完成，請稍候。若持續失敗，請確認是否在 LINE 內開啟。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const endDate = document.getElementById('endDate').value;
 
         if (!startDate || !endDate) {
-            alert("⚠️ 請填寫開始與結束日期。");
+            Swal.fire({ text: "⚠️ 請填寫開始與結束日期。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 【防呆機制】：若未替換 GAS URL，單純在本地跳出模擬成功視窗
         if (GAS_WEB_APP_URL.includes("你的_GAS_部署代碼")) {
             setTimeout(() => {
-                alert(`模擬請假送出成功！(因為尚未貼上GAS網址)\n\n開始：${payload.startDate}\n結束：${payload.endDate}\n假別：${payload.leaveType}\n代理人：${payload.agentName}\n事由：${payload.reason}`);
+                Swal.fire({ text: `模擬請假送出成功！(因為尚未貼上GAS網址)\n\n開始：${payload.startDate}\n結束：${payload.endDate}\n假別：${payload.leaveType}\n代理人：${payload.agentName}\n事由：${payload.reason}`, confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 btn.innerText = originalText;
                 btn.disabled = false;
                 // 若在真實 LINE 內，則送出成功就關閉網頁
@@ -106,17 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(data => {
                 if (data.status === "success") {
-                    alert("✅ 請假申請已成功送出！");
+                    Swal.fire({ text: "✅ 請假申請已成功送出！", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                     // 在 LINE App 中執行完畢即關閉視窗
                     if (typeof liff !== 'undefined' && liff.isInClient()) {
                         liff.closeWindow();
                     }
                 } else {
-                    alert("⚠️ 送出遇到問題，請稍後再試。");
+                    Swal.fire({ text: "⚠️ 送出遇到問題，請稍後再試。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 }
             })
             .catch(err => {
-                alert("⚠️ 錯誤：無法連線，請確認網路或 GAS 網址！");
+                Swal.fire({ text: "⚠️ 錯誤：無法連線，請確認網路或 GAS 網址！", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 console.error(err);
             })
             .finally(() => {

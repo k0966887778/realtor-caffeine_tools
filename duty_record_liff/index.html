@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <!-- 引入 LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <!-- 引入 SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -93,8 +95,11 @@
                 </div>
             </div>
 
-            <!-- Global Save Button -->
-            <button id="saveAllBtn" class="primary-btn" style="margin-top: 20px; margin-bottom: 20px; background-color: var(--primary-dark);">💾 儲存所有值班與交接紀錄</button>
+            <!-- Global Action Buttons -->
+            <div style="margin-top: 20px; margin-bottom: 20px; display: flex; gap: 10px;">
+                <button id="deleteRecordBtn" class="primary-btn" style="display: none; background-color: #dc3545;">刪除</button>
+                <button id="saveAllBtn" class="primary-btn" style="background-color: var(--primary-dark);">儲存</button>
+            </div>
 
         </div>
 

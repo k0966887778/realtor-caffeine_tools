@@ -2,7 +2,7 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
 let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxIR-A4qz8EZHQjlapRcC01jXKT8oN3d35Wp03jq-7b1zg8QBK6NLjNd4WdedHVLdB-iw/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzKBkE8rV-9C4yrWuuu0DypNgx4rPX1q1DUN6whgxDp4p8L2hiofsEKe2_2cpbXaQXLLA/exec';
 
 // 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
 window.localShiftData = window.localShiftData || {};
@@ -136,6 +136,7 @@ function renderWeekCalendar() {
             // clear form when switching dates
             document.getElementById('shiftType').value = "";
             dutyCheckInId = null;
+            document.getElementById('signInBtn').style.display = '';
             document.getElementById('signInStatus').innerText = '';
             document.getElementById('handoverNotes').value = '';
             document.getElementById('arrangedTasks').value = '';
@@ -308,6 +309,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (!date || !shift) {
             dutyCheckInId = null;
+            document.getElementById('deleteRecordBtn').style.display = 'none';
+            document.getElementById('signInBtn').style.display = '';
             document.getElementById('signInStatus').innerText = '';
             document.getElementById('handoverNotes').value = '';
             document.getElementById('arrangedTasks').value = '';
@@ -328,11 +331,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dayData = window.localShiftData[date] && window.localShiftData[date][shift];
                 if (dayData) {
                     dutyCheckInId = dayData.dutyCheckInId;
+                    document.getElementById('deleteRecordBtn').style.display = 'block';
+                    document.getElementById('signInBtn').style.display = 'none';
                     document.getElementById('signInStatus').innerText = `已載入暫存紀錄 (ID: ${dutyCheckInId})`;
                     document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
                     document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
                 } else {
                     dutyCheckInId = null;
+                    document.getElementById('deleteRecordBtn').style.display = 'none';
+                    document.getElementById('signInBtn').style.display = '';
                     document.getElementById('signInStatus').innerText = '新班別，請先簽到';
                 }
                 return;
@@ -347,6 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success && result.record) {
                 const rec = result.record;
                 dutyCheckInId = rec.dutyCheckInId;
+                document.getElementById('deleteRecordBtn').style.display = 'block';
+                document.getElementById('signInBtn').style.display = 'none';
                 const timeStr = rec.time ? `(簽到時間: ${rec.time})` : `(ID: ${dutyCheckInId})`;
                 document.getElementById('signInStatus').innerText = `已載入雲端紀錄 ${timeStr}`;
                 document.getElementById('handoverNotes').value = rec.handoverNotes || '';
@@ -404,11 +413,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 dutyCheckInId = null;
-                document.getElementById('signInStatus').innerText = '新班別，未簽到';
+                document.getElementById('deleteRecordBtn').style.display = 'none';
+                document.getElementById('signInBtn').style.display = '';
+                document.getElementById('signInStatus').innerText = '新班別，請先簽到';
             }
-        } catch (err) {
-            console.error(err);
-            document.getElementById('signInStatus').innerText = '讀取失敗，請檢查網路';
+        } catch (e) {
+            console.error(e);
+            document.getElementById('signInStatus').innerText = '讀取紀錄失敗';
         }
     });
 
@@ -419,8 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedDateEl = document.querySelector('.week-day.selected');
         const date = selectedDateEl ? selectedDateEl.dataset.date : null;
         
-        if (!shiftType) {
-            alert('請先選擇班別');
+        if (!date || !shiftType) {
+            Swal.fire({ text: '請先選擇日期與班別', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -430,7 +441,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // 如果還沒設定 GAS 網址，則走 mock 預覽流程
             if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
                 dutyCheckInId = `MOCK-${Math.floor(Math.random()*10000)}`;
+                document.getElementById('signInBtn').style.display = 'none';
                 document.getElementById('signInStatus').innerText = `已打卡: ${time} (ID: ${dutyCheckInId}) (僅供預覽)`;
+                
+                // Set to week memory
+                window.localShiftData[date] = window.localShiftData[date] || {};
+                window.localShiftData[date][shiftType] = window.localShiftData[date][shiftType] || {};
+                window.localShiftData[date][shiftType].dutyCheckInId = dutyCheckInId;
+                renderWeekCalendar();
                 return;
             }
 
@@ -448,13 +466,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
             if (result.success) {
                 dutyCheckInId = result.dutyCheckInId;
-                document.getElementById('signInStatus').innerText = `已打卡: ${time} (系統ID: ${dutyCheckInId})`;
+                document.getElementById('deleteRecordBtn').style.display = 'block';
+                document.getElementById('signInBtn').style.display = 'none';
+                document.getElementById('signInStatus').innerText = `簽到成功！ (時間: ${time})`;
+                
+                // Set to week memory
+                window.localShiftData[date] = window.localShiftData[date] || {};
+                window.localShiftData[date][shiftType] = window.localShiftData[date][shiftType] || {};
+                window.localShiftData[date][shiftType].dutyCheckInId = dutyCheckInId;
+                renderWeekCalendar();
             } else {
-                alert('簽到失敗: ' + result.error);
-                document.getElementById('signInStatus').innerText = '';
+                Swal.fire({ text: '簽到失敗: ' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                document.getElementById('signInStatus').innerText = '簽到失敗';
             }
         } catch (e) {
-            alert('網路連接錯誤');
+            Swal.fire({ text: '網路連接錯誤', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             document.getElementById('signInStatus').innerText = '';
         }
     });
@@ -462,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save All Button Logic
     document.getElementById('saveAllBtn').addEventListener('click', async () => {
         if (!dutyCheckInId) {
-            alert('請先進行簽到取得打卡 ID，才能儲存交接紀錄！');
+            Swal.fire({ text: '請先進行簽到取得打卡 ID，才能儲存交接紀錄！', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -519,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
             console.log("Mock Payload JSON:", payload);
-            alert('預覽模式：所有資料收集成功並模擬送出！(請開啟瀏覽器 Console 查看詳細 JSON)');
+            Swal.fire({ text: '預覽模式：所有資料收集成功並模擬送出！(請開啟瀏覽器 Console 查看詳細 JSON)', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -534,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
             if (result.success) {
-                alert('所有紀錄儲存成功！');
+                Swal.fire({ text: '所有紀錄儲存成功！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 
                 // Save locally so the calendar and form switching works
                 const selectedDateEl = document.querySelector('.week-day.selected');
@@ -551,13 +577,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderWeekCalendar(); // refresh badges
 
             } else {
-                alert('儲存失敗：' + result.error);
+                Swal.fire({ text: '儲存失敗：' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             }
         } catch (e) {
-            alert('網路連接錯誤');
+            Swal.fire({ text: '網路連接錯誤', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
         } finally {
-            btn.innerText = '💾 儲存所有值班與交接紀錄';
+            btn.innerText = '儲存';
             btn.disabled = false;
+        }
+    });
+
+    // Delete Record Button handling
+    document.getElementById('deleteRecordBtn').addEventListener('click', async () => {
+        if (!dutyCheckInId) return;
+        
+        const confirmResult = await Swal.fire({
+            title: '確定要刪除這筆紀錄嗎？',
+            text: '這將會連同客戶登記與鑰匙紀錄一併從雲端徹底刪除。',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '是的，刪除',
+            cancelButtonText: '取消'
+        });
+        
+        if (confirmResult.isConfirmed) {
+            const btn = document.getElementById('deleteRecordBtn');
+            btn.innerText = '刪除中...';
+            btn.disabled = true;
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'record_delete_duty', dutyCheckInId: dutyCheckInId })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    Swal.fire({ text: '紀錄已成功刪除！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                    
+                    // Clear local memory
+                    const selectedDateEl = document.querySelector('.week-day.selected');
+                    const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+                    const shift = document.getElementById('shiftType').value;
+                    if (date && window.localShiftData[date]) {
+                        delete window.localShiftData[date][shift];
+                        renderWeekCalendar();
+                    }
+                    
+                    // Reset UI
+                    dutyCheckInId = null;
+                    document.getElementById('deleteRecordBtn').style.display = 'none';
+                    document.getElementById('signInBtn').style.display = '';
+                    document.getElementById('signInStatus').innerText = '紀錄已刪除，請重新簽到';
+                    document.getElementById('handoverNotes').value = '';
+                    document.getElementById('arrangedTasks').value = '';
+                    if (window.customerFormsManager) window.customerFormsManager.reset();
+                    if (window.keyFormsManager) window.keyFormsManager.reset();
+                } else {
+                    Swal.fire({ text: '刪除失敗: ' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                }
+            } catch (e) {
+                Swal.fire({ text: '網路連接錯誤', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            } finally {
+                btn.innerText = '刪除';
+                btn.disabled = false;
+            }
         }
     });
 });

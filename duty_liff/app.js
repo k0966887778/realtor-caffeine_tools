@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const LIFF_ID = "2009511611-TcLF758l";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzRmewNbn4lczAqejxO1S0ksmUS8D8GcDWVzmEbgHP5pYGEXTK08NKeZtXcgeH7m0fXuA/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKBkE8rV-9C4yrWuuu0DypNgx4rPX1q1DUN6whgxDp4p8L2hiofsEKe2_2cpbXaQXLLA/exec";
 
     let userProfile = { userId: "", displayName: "載入中..." };
     let selectedDates = new Set();

@@ -179,7 +179,7 @@ function sendLiffMessage(type) {
     if (!textData) return;
 
     if (typeof liff === 'undefined' || !liff.isLoggedIn() || !liff.isInClient()) {
-        alert("此功能需在 LINE App 中開啟才能傳送訊息到聊天室！\n\n預計傳送內容：\n" + textData);
+        Swal.fire({ text: "此功能需在 LINE App 中開啟才能傳送訊息到聊天室！\n\n預計傳送內容：\n" + textData, confirmButtonText: '確定', confirmButtonColor: '#20c997' });
         return;
     }
 
@@ -190,6 +190,6 @@ function sendLiffMessage(type) {
         liff.closeWindow();
     }).catch((err) => {
         console.error('LIFF send Error: ', err);
-        alert('發生錯誤無法傳送：' + err);
+        Swal.fire({ text: '發生錯誤無法傳送：' + err, confirmButtonText: '確定', confirmButtonColor: '#20c997' });
     });
 }
