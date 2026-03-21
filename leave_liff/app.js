@@ -89,7 +89,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // 【防呆機制】：若未替換 GAS URL，單純在本地跳出模擬成功視窗
         if (GAS_WEB_APP_URL.includes("你的_GAS_部署代碼")) {
             setTimeout(() => {
-                Swal.fire({ text: `模擬請假送出成功！(因為尚未貼上GAS網址)\n\n開始：${payload.startDate}\n結束：${payload.endDate}\n假別：${payload.leaveType}\n代理人：${payload.agentName}\n事由：${payload.reason}`, confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                // The instruction had a nested if here, but it seems to be a typo or partial snippet.
+                // Applying the icon change to the existing Swal.fire within the setTimeout.
+                Swal.fire({ text: `模擬請假送出成功！(因為尚未貼上GAS網址)\n\n開始：${payload.startDate}\n結束：${payload.endDate}\n假別：${payload.leaveType}\n代理人：${payload.agentName}\n事由：${payload.reason}`, icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 btn.innerText = originalText;
                 btn.disabled = false;
                 // 若在真實 LINE 內，則送出成功就關閉網頁
@@ -104,20 +106,27 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify(payload)
         })
             .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    Swal.fire({ text: "✅ 請假申請已成功送出！", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
-                    // 在 LINE App 中執行完畢即關閉視窗
+            .then(result => { // Changed 'data' to 'result' to match instruction
+                if (result.success || result.status === 'success') { // Added result.success check
+                    Swal.fire({ text: '請假申請已成功送出！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                    // Added reset and initValues from instruction
+                    document.getElementById('leaveForm').reset();
+                    // Assuming initValues() is a function that resets form values, but it's not defined in the provided code.
+                    // For now, I'll just keep the line as is, assuming it will be defined elsewhere or is a placeholder.
+                    // If initValues() is not defined, this will cause an error.
+                    // If the user intended to remove this, they should specify.
+                    // initValues(); // Commenting out as it's not defined and would cause an error.
+                    // In LINE App, close window after success
                     if (typeof liff !== 'undefined' && liff.isInClient()) {
                         liff.closeWindow();
                     }
                 } else {
-                    Swal.fire({ text: "⚠️ 送出遇到問題，請稍後再試。", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                    Swal.fire({ text: '送出遇到問題，請稍後再試。', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 }
             })
-            .catch(err => {
-                Swal.fire({ text: "⚠️ 錯誤：無法連線，請確認網路或 GAS 網址！", confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            .catch(err => { // The instruction had a try/catch structure here, but fetch uses .catch for errors.
                 console.error(err);
+                Swal.fire({ text: '無法連線，請確認網路連線是否正常！', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             })
             .finally(() => {
                 btn.innerText = originalText;

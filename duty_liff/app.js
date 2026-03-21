@@ -142,36 +142,47 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('deleteBtn').addEventListener('click', async () => {
         if (!selectedEventRowIndex) return;
 
-        if (!confirm('確定要刪除這筆資料嗎？')) return;
+        const confirmResult = await Swal.fire({
+            title: '確定要刪除這筆排班嗎？',
+            text: '刪除後將無法還原。',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '是的，刪除',
+            cancelButtonText: '取消'
+        });
 
-        const btn = document.getElementById('deleteBtn');
-        const originalText = btn.innerText;
-        btn.innerText = '刪除中...';
-        btn.disabled = true;
+        if (confirmResult.isConfirmed) {
+            const btn = document.getElementById('deleteBtn');
+            const originalText = btn.innerText;
+            btn.innerText = '刪除中...';
+            btn.disabled = true;
 
-        try {
-            const response = await fetch(GAS_WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "delete_duty",
-                    rowIndex: selectedEventRowIndex,
-                    userId: userProfile.userId
-                })
-            });
-            const result = await response.json();
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "delete_duty",
+                        rowIndex: selectedEventRowIndex,
+                        userId: userProfile.userId
+                    })
+                });
+                const result = await response.json();
 
-            if (result.status === "success") {
-                showStatus("🗑 已成功刪除該排班。", "success");
-                closeModal();
-                fetchDutyRecords(); // 重新讀取並刷新日曆
-            } else {
-                showStatus("⚠️ 刪除失敗：" + result.message, "error");
+                if (result.status === "success") {
+                    Swal.fire({ text: '已成功刪除該排班。', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                    closeModal();
+                    fetchDutyRecords(); // 重新讀取並刷新日曆
+                } else {
+                    Swal.fire({ text: '刪除失敗：' + result.message, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                }
+            } catch (err) {
+                Swal.fire({ text: '刪除時發生錯誤，請檢查網路。', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
-        } catch (err) {
-            showStatus("❌ 刪除時發生錯誤，請檢查網路。", "error");
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
         }
     });
 
@@ -252,16 +263,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await response.json();
 
             if (result.status === "success") {
-                showStatus(`✅ 儲存成功！共 ${result.count} 筆資料已寫入。`, "success");
+                Swal.fire({ text: `儲存成功！共 ${result.count} 筆資料已寫入。`, icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 selectedDates.clear();
                 updateSelectionUI();
                 document.getElementById('dutyForm').reset();
                 fetchDutyRecords(); // 重新載入日曆資料
             } else {
-                showStatus("⚠️ 錯誤：" + result.message, "error");
+                Swal.fire({ text: '儲存失敗：' + result.message, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             }
         } catch (err) {
-            showStatus("❌ 儲存失敗，請檢查網路", "error");
+            Swal.fire({ text: '儲存失敗，請檢查網路連線', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
         } finally {
             btn.disabled = false;
             btn.innerText = "儲存排班資料";
