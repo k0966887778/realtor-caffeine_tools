@@ -136,7 +136,7 @@ function renderWeekCalendar() {
             // clear form when switching dates
             document.getElementById('shiftType').value = "";
             dutyCheckInId = null;
-            document.getElementById('signInBtn').style.display = '';
+            document.getElementById('signInBtn').style.display = 'none';
             document.getElementById('signInStatus').innerText = '';
             document.getElementById('handoverNotes').value = '';
             document.getElementById('arrangedTasks').value = '';
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!date || !shift) {
             dutyCheckInId = null;
             document.getElementById('deleteRecordBtn').style.display = 'none';
-            document.getElementById('signInBtn').style.display = '';
+            document.getElementById('signInBtn').style.display = 'none';
             document.getElementById('signInStatus').innerText = '';
             document.getElementById('handoverNotes').value = '';
             document.getElementById('arrangedTasks').value = '';
@@ -320,6 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.getElementById('signInStatus').innerText = '正在讀取雲端紀錄...';
+        document.getElementById('signInBtn').style.display = 'none';
         document.getElementById('handoverNotes').value = '';
         document.getElementById('arrangedTasks').value = '';
         if (window.customerFormsManager) window.customerFormsManager.reset();
@@ -333,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dutyCheckInId = dayData.dutyCheckInId;
                     document.getElementById('deleteRecordBtn').style.display = 'block';
                     document.getElementById('signInBtn').style.display = 'none';
-                    document.getElementById('signInStatus').innerText = `已載入暫存紀錄 (ID: ${dutyCheckInId})`;
+                    document.getElementById('signInStatus').innerHTML = `已載入暫存紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId}</span>`;
                     document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
                     document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
                 } else {
@@ -356,8 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 dutyCheckInId = rec.dutyCheckInId;
                 document.getElementById('deleteRecordBtn').style.display = 'block';
                 document.getElementById('signInBtn').style.display = 'none';
-                const timeStr = rec.time ? `(簽到時間: ${rec.time})` : `(ID: ${dutyCheckInId})`;
-                document.getElementById('signInStatus').innerText = `已載入雲端紀錄 ${timeStr}`;
+                const timeStr = rec.time ? `<span style="color:#888; font-size:12px; font-weight:normal;">簽到時間: ${rec.time}</span>` : `<span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId}</span>`;
+                document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <br> ${timeStr}`;
                 document.getElementById('handoverNotes').value = rec.handoverNotes || '';
                 document.getElementById('arrangedTasks').value = rec.arrangedTasks || '';
 
@@ -420,6 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error(e);
             document.getElementById('signInStatus').innerText = '讀取紀錄失敗';
+            document.getElementById('signInBtn').style.display = ''; 
         }
     });
 
@@ -437,12 +439,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             document.getElementById('signInStatus').innerText = `連線中...`;
+            document.getElementById('signInBtn').disabled = true;
+            document.getElementById('signInBtn').innerText = '簽到中...';
             
             // 如果還沒設定 GAS 網址，則走 mock 預覽流程
             if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
                 dutyCheckInId = `MOCK-${Math.floor(Math.random()*10000)}`;
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signInStatus').innerText = `已打卡: ${time} (ID: ${dutyCheckInId}) (僅供預覽)`;
+                document.getElementById('signInBtn').disabled = false;
+                document.getElementById('signInBtn').innerText = '簽到';
+                document.getElementById('signInStatus').innerHTML = `已打卡 <span style="color:#888; font-size:12px; font-weight:normal;">${time} ID: ${dutyCheckInId} 僅供預覽</span>`;
                 
                 // Set to week memory
                 window.localShiftData[date] = window.localShiftData[date] || {};
@@ -468,7 +474,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 dutyCheckInId = result.dutyCheckInId;
                 document.getElementById('deleteRecordBtn').style.display = 'block';
                 document.getElementById('signInBtn').style.display = 'none';
-                document.getElementById('signInStatus').innerText = `簽到成功！ (時間: ${time})`;
+                document.getElementById('signInBtn').disabled = false;
+                document.getElementById('signInBtn').innerText = '簽到';
+                document.getElementById('signInStatus').innerHTML = `簽到成功！ <span style="color:#888; font-size:12px; font-weight:normal;">時間: ${time}</span>`;
                 
                 // Set to week memory
                 window.localShiftData[date] = window.localShiftData[date] || {};
@@ -478,10 +486,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 Swal.fire({ text: '簽到失敗: ' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 document.getElementById('signInStatus').innerText = '簽到失敗';
+                document.getElementById('signInBtn').disabled = false;
+                document.getElementById('signInBtn').innerText = '簽到';
             }
         } catch (e) {
             Swal.fire({ text: '網路連接錯誤', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             document.getElementById('signInStatus').innerText = '';
+            document.getElementById('signInBtn').disabled = false;
+            document.getElementById('signInBtn').innerText = '簽到';
         }
     });
 
