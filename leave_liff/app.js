@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     const LIFF_ID = "2009511611-QGXSdutf";
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzKBkE8rV-9C4yrWuuu0DypNgx4rPX1q1DUN6whgxDp4p8L2hiofsEKe2_2cpbXaQXLLA/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyiK75XXTwFAPQLiQkcxhA0htBLAuCYhXnCVTaMXzVoBORkYPbdsdWfcuuNmFSiD4mFdQ/exec";
 
     // 暫存的本地使用者資料
     let userProfile = { userId: "測試ID", displayName: "王大明" };
