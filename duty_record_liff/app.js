@@ -2,6 +2,8 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; 
 let currentWeekOffset = 0; 
+let currentArrangedTasks = '';
+let showingTaskHistory = false;
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzTmGNzsKQ1V-H1DVQ0M6MV1kzoZ2l7pl9ZjQICHyxX6_MFGlWjkI74bA-cdOUQfvpT0Q/exec';
 
 window.localShiftData = window.localShiftData || {};
@@ -281,51 +283,64 @@ class DynamicFormManager {
 }
 
 window.loadReservedTasks = function(date) {
-    const listContainer = document.getElementById('reservedTasksList');
-    const tasks = window.localTasksData[date] || [];
-    
-    if (tasks.filter(t => !t.isDone).length === 0) {
-        listContainer.innerHTML = '<div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">目前無待辦交辦事項</div>';
-        return;
+    const listEl = document.getElementById('reservedTasksList');
+    listEl.innerHTML = '';
+
+    let displayTasks = [];
+    if (showingTaskHistory) {
+        Object.keys(window.localTasksData).forEach(d => {
+            window.localTasksData[d].forEach(t => displayTasks.push({...t, displayDate: d}));
+        });
+        displayTasks.sort((a,b) => a.displayDate > b.displayDate ? -1 : 1);
+    } else {
+        const tasks = window.localTasksData[date] || [];
+        displayTasks = tasks.filter(t => !t.isDone).map(t => ({...t, displayDate: date}));
     }
     
-    listContainer.innerHTML = '';
-    tasks.forEach(task => {
-        if (!task.isDone) {
-            const btn = document.createElement('button');
-            btn.className = 'task-item-btn';
-            btn.innerHTML = `
-                <div class="task-datetime">${date}</div>
-                <div class="task-content">${task.content}</div>
-            `;
-            let pressTimer;
-            const startPress = () => {
-                pressTimer = setTimeout(() => {
-                    Swal.fire({
-                        text: '即將刪除此交辦事項，確認刪除？',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: '刪除',
-                        confirmButtonColor: '#dc3545'
-                    }).then((res) => {
-                        if (res.isConfirmed) {
-                            if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
-                                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_reserved_task', taskId: task.id }) });
-                            }
-                            window.localTasksData[date] = window.localTasksData[date].filter(t => t.id !== task.id);
-                            loadReservedTasks(date); 
+    if (displayTasks.length === 0) {
+        listEl.innerHTML = `<div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">${showingTaskHistory ? '尚無任何交辦事項紀錄' : '目前無交辦事項'}</div>`;
+        return;
+    }
+
+    displayTasks.forEach(task => {
+        const div = document.createElement('div');
+        div.className = 'task-item';
+        let contentHtml = showingTaskHistory && task.isDone ? `<span style="color:#aaa; text-decoration:line-through;">${task.content}</span>` : task.content;
+        let pfx = showingTaskHistory ? `<span style="color:#888;">[${task.displayDate.substring(5)}]</span> ` : '';
+        div.innerHTML = `
+            <div>
+                <div style="font-size: 14px;">${pfx}${contentHtml}</div>
+                <div style="font-size: 11px; color: #999; margin-top: 4px;">日期: ${task.displayDate} (長按可刪除)</div>
+            </div>
+        `;
+        
+        let pressTimer;
+        const startPress = () => {
+            pressTimer = setTimeout(() => {
+                Swal.fire({
+                    text: '即將刪除此交辦事項，確認刪除？',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '刪除',
+                    confirmButtonColor: '#dc3545'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                            fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_reserved_task', taskId: task.id }) });
                         }
-                    });
-                }, 800);
-            };
-            const cancelPress = () => clearTimeout(pressTimer);
-            btn.addEventListener('touchstart', startPress);
-            btn.addEventListener('touchend', cancelPress);
-            btn.addEventListener('mousedown', startPress);
-            btn.addEventListener('mouseup', cancelPress);
-            btn.addEventListener('mouseleave', cancelPress);
-            listContainer.appendChild(btn);
-        }
+                        window.localTasksData[task.displayDate] = window.localTasksData[task.displayDate].filter(t => t.id !== task.id);
+                        loadReservedTasks(date); 
+                    }
+                });
+            }, 800);
+        };
+        const cancelPress = () => clearTimeout(pressTimer);
+        div.addEventListener('touchstart', startPress);
+        div.addEventListener('touchend', cancelPress);
+        div.addEventListener('mousedown', startPress);
+        div.addEventListener('mouseup', cancelPress);
+        div.addEventListener('mouseleave', cancelPress);
+        listEl.appendChild(div);
     });
 }
 
@@ -407,6 +422,15 @@ window.openDutyModal = async function(date, shiftLabel) {
                     document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄<br><span style="color:#888; font-size:12px; font-weight:normal; margin-top:4px; display:inline-block;">${timeStr}</span>`;
                     document.getElementById('handoverNotes').value = rec.handoverNotes || '';
                     
+                    currentArrangedTasks = rec.arrangedTasks || '';
+                    const compContainer = document.getElementById('modalCompletedTasksContainer');
+                    if (currentArrangedTasks) {
+                        compContainer.innerHTML = '<div style="margin-bottom:4px; font-weight:bold;">已完成事項：</div>' + currentArrangedTasks.replace(/\n/g, '<br>');
+                        compContainer.style.display = 'block';
+                    } else {
+                        compContainer.style.display = 'none';
+                    }
+
                     if (rec.customers && rec.customers.length > 0) {
                         window.customerFormsManager.reset();
                         rec.customers.forEach((c, idx) => {
@@ -461,6 +485,8 @@ window.openDutyModal = async function(date, shiftLabel) {
         document.getElementById('saveAllBtn').disabled = false;
     } else {
         dutyCheckInId = null;
+        currentArrangedTasks = '';
+        document.getElementById('modalCompletedTasksContainer').style.display = 'none';
         document.getElementById('deleteRecordBtn').style.display = 'none';
         document.getElementById('signInBtn').style.display = 'block';
         document.getElementById('signInStatus').innerText = '新班別，請輸入姓名後簽到';
@@ -484,10 +510,32 @@ document.addEventListener('DOMContentLoaded', () => {
         renderWeekCalendar();
     });
 
-    document.getElementById('closeModalBtn').addEventListener('click', () => {
+    const closeDutyModal = () => {
         document.getElementById('dutyModalOverlay').classList.remove('active');
+        document.querySelectorAll('.week-day').forEach(n => n.classList.remove('selected'));
+    };
+
+    document.getElementById('closeModalBtn').addEventListener('click', closeDutyModal);
+
+    document.getElementById('dutyModalOverlay').addEventListener('click', (e) => {
+        if (e.target.id === 'dutyModalOverlay') closeDutyModal();
     });
 
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('dutyModalOverlay').classList.contains('active')) {
+            closeDutyModal();
+        }
+    });
+
+    // Handle toggle history
+    document.getElementById('toggleTaskHistoryBtn').addEventListener('click', (e) => {
+        showingTaskHistory = !showingTaskHistory;
+        e.target.innerText = showingTaskHistory ? '返回待辦' : '過往紀錄';
+        const currDate = document.querySelector('.week-day.selected')?.dataset.date;
+        if (currDate) loadReservedTasks(currDate);
+    });
+
+    // Handle Add New Task
     document.getElementById('addNewTaskBtn').addEventListener('click', async () => {
         const selectedDateEl = document.querySelector('.week-day.selected');
         const date = selectedDateEl ? selectedDateEl.dataset.date : getTaipeiDate();
@@ -625,7 +673,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const handoverNotes = document.getElementById('handoverNotes').value;
-
+        
+        const newlyChecked = [];
+        document.querySelectorAll('.task-checkbox').forEach(cb => {
+            if (cb.checked) newlyChecked.push('✔️ ' + cb.closest('label').querySelector('span').innerText.trim());
+        });
+        const arrangedTasks = [currentArrangedTasks, ...newlyChecked].filter(Boolean).join('\n');
+        
         // Process completed tasks
         const checkboxes = document.querySelectorAll('.task-checkbox');
         const completedTaskIds = [];

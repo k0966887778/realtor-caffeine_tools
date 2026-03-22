@@ -138,6 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === this) closeModal();
     });
 
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('detailModal').style.display === 'flex') {
+            closeModal();
+        }
+    });
+
     // 5. 執行刪除動作
     document.getElementById('deleteBtn').addEventListener('click', async () => {
         if (!selectedEventRowIndex) return;
