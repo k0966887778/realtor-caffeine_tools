@@ -4,7 +4,7 @@ let dutyCheckInId = null;
 let currentWeekOffset = 0; 
 let currentArrangedTasks = '';
 let showingTaskHistory = false;
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzTmGNzsKQ1V-H1DVQ0M6MV1kzoZ2l7pl9ZjQICHyxX6_MFGlWjkI74bA-cdOUQfvpT0Q/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyGlQu8rM1F7HKySGgnwN-MbPMjFhHQffWGue801W9-eMY3P-fVbUX0p-3UWtopR2j1/exec';
 
 window.localShiftData = window.localShiftData || {};
 window.localTasksData = window.localTasksData || {};
@@ -731,6 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             action: 'record_save_duty',
             dutyCheckInId: dutyCheckInId,
             handoverNotes: handoverNotes,
+            arrangedTasks: arrangedTasks,
             completedTaskIds: completedTaskIds, // Backend should mark these as done in 7_預約交辦事宜
             customers: customers,
             keys: keys
