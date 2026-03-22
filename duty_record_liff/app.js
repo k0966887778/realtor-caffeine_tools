@@ -110,7 +110,7 @@ function renderWeekCalendar() {
             
             if (recordName) {
                 const displayName = recordName.length > 2 ? recordName.substring(recordName.length - 2) : recordName;
-                badgesHtml += `<div class="duty-badge recorded-shift" data-shift="${shiftName}">${shiftPrefix} ${displayName}</div>`;
+                badgesHtml += `<div class="duty-badge recorded-shift" data-shift="${shiftName}">${displayName}</div>`;
             } else {
                 badgesHtml += `<div class="duty-badge empty-shift" data-shift="${shiftName}">${shiftPrefix}</div>`;
             }
