@@ -2,7 +2,7 @@ let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
 let dutyCheckInId = null; 
 let currentWeekOffset = 0; 
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwRkZO4nuUiYOiCt15uiFt3-ua3ZCwWwdZdbXZWohN-vnMAH25sEUiGlLt-C44QO0e8tA/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzTmGNzsKQ1V-H1DVQ0M6MV1kzoZ2l7pl9ZjQICHyxX6_MFGlWjkI74bA-cdOUQfvpT0Q/exec';
 
 window.localShiftData = window.localShiftData || {};
 window.localTasksData = window.localTasksData || {};
@@ -365,13 +365,80 @@ window.openDutyModal = async function(date, shiftLabel) {
 
     const dayData = window.localShiftData[date] && window.localShiftData[date][shiftLabel];
     if (dayData) {
-        dutyCheckInId = dayData.dutyCheckInId;
         document.getElementById('deleteRecordBtn').style.display = 'block';
         document.getElementById('signInBtn').style.display = 'none';
-        document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId || 'MOCK'}</span>`;
-        document.getElementById('saveAllBtn').innerText = '儲存 / 修改';
+        document.getElementById('signInStatus').innerHTML = `正在讀取雲端詳細紀錄...`;
+        document.getElementById('saveAllBtn').innerText = '讀取中...';
+        document.getElementById('saveAllBtn').disabled = true;
         document.getElementById('recordName').value = dayData.name || currentLineName;
-        document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
+        document.getElementById('handoverNotes').value = '';
+
+        if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'get_single_duty_record', date, shiftType: shiftLabel })
+                });
+                const result = await response.json();
+                if (result.success && result.record) {
+                    const rec = result.record;
+                    dutyCheckInId = rec.dutyCheckInId;
+                    const timeStr = rec.time ? `簽到時間: ${rec.time}` : `ID: ${dutyCheckInId}`;
+                    document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">${timeStr}</span>`;
+                    document.getElementById('handoverNotes').value = rec.handoverNotes || '';
+                    
+                    if (rec.customers && rec.customers.length > 0) {
+                        window.customerFormsManager.reset();
+                        rec.customers.forEach((c, idx) => {
+                            if (idx > 0) window.customerFormsManager.addPage();
+                            const page = window.customerFormsManager.pages[idx];
+                            if (page) {
+                                page.querySelector('.reg-date').value = c.regDate || '';
+                                page.querySelector('.registrant').value = c.registrant || '';
+                                const srcSelect = page.querySelector('.source-select');
+                                const srcOther = page.querySelector('.source-other');
+                                if (['電話','來店','LINE','網路','介紹'].includes(c.source)) {
+                                    srcSelect.value = c.source;
+                                    srcOther.classList.add('hidden');
+                                } else if (c.source) {
+                                    srcSelect.value = '其他';
+                                    srcOther.value = c.source;
+                                    srcOther.classList.remove('hidden');
+                                }
+                                page.querySelector('.contact-phone').value = c.phone || '';
+                                page.querySelector('.inquiry-prop').value = c.prop || '';
+                                page.querySelector('.customer-need').value = c.need || '';
+                                page.querySelector('.status-select').value = c.status || '';
+                                page.querySelector('.remarks').value = c.remarks || '';
+                            }
+                        });
+                        window.customerFormsManager.switchPage(0);
+                    }
+                    if (rec.keys && rec.keys.length > 0) {
+                        window.keyFormsManager.reset();
+                        rec.keys.forEach((k, idx) => {
+                            if (idx > 0) window.keyFormsManager.addPage();
+                            const page = window.keyFormsManager.pages[idx];
+                            if (page) {
+                                page.querySelector('.key-reg-time').value = k.regTime || '';
+                                page.querySelector('.borrower-name').value = k.borrower || '';
+                                page.querySelector('.prop-name').value = k.prop || '';
+                                page.querySelector('.key-number').value = k.keyNo || '';
+                                page.querySelector('.borrow-time').value = k.borrowTime || '';
+                                page.querySelector('.return-time').value = k.returnTime || '';
+                                page.querySelector('.handler-name').value = k.handler || '';
+                                page.querySelector('.confirmer-name').value = k.confirmer || '';
+                            }
+                        });
+                        window.keyFormsManager.switchPage(0);
+                    }
+                } else {
+                     document.getElementById('signInStatus').innerHTML = `讀取失敗，無法載入紀錄詳細資料`;
+                }
+            } catch(e) { console.error(e); }
+        }
+        document.getElementById('saveAllBtn').innerText = '儲存 / 修改';
+        document.getElementById('saveAllBtn').disabled = false;
     } else {
         dutyCheckInId = null;
         document.getElementById('deleteRecordBtn').style.display = 'none';
@@ -527,8 +594,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (!dutyCheckInId) {
-            Swal.fire({ text: '請先進行簽到取得打卡 ID，才能儲存交接紀錄！', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
-            return;
+            if (document.getElementById('signInBtn').style.display === 'none') {
+                const date = document.querySelector('.week-day.selected') ? document.querySelector('.week-day.selected').dataset.date : new Date().toISOString().split('T')[0];
+                const shiftLabel = document.getElementById('shiftType').value;
+                dutyCheckInId = `DUTY-${String(date).replace(/-/g, '')}-${shiftLabel}-${currentLineId ? currentLineId.substring(0,8) : 'RECOVER'}`;
+            } else {
+                Swal.fire({ text: '請先進行簽到取得打卡 ID，才能儲存交接紀錄！', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                return;
+            }
         }
 
         const handoverNotes = document.getElementById('handoverNotes').value;
@@ -645,7 +718,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('deleteRecordBtn').addEventListener('click', async () => {
-        if (!dutyCheckInId) return;
+        if (!dutyCheckInId) {
+            Swal.fire({ text: '這筆紀錄在當前畫面上遺失了打卡 ID，我們將直接幫您從畫面上將它移除。', icon: 'info', confirmButtonText: '確定', confirmButtonColor: '#20c997' }).then(() => {
+                const shift = document.getElementById('shiftType').value;
+                const selectedDateEl = document.querySelector('.week-day.selected');
+                const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+                if (date && window.localShiftData[date]) {
+                    delete window.localShiftData[date][shift];
+                    renderWeekCalendar();
+                }
+                document.getElementById('dutyModalOverlay').classList.remove('active');
+            });
+            return;
+        }
         
         const confirmResult = await Swal.fire({
             title: '確定要刪除這筆紀錄嗎？',

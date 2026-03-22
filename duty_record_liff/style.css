@@ -432,6 +432,11 @@ html, body {
     font-size: 14px;
     text-align: center;
 }
+
+/* Ensure SweetAlert2 always stays on top of our modal */
+.swal2-container {
+    z-index: 99999 !important;
+}
 .task-item-btn {
     display: block;
     width: 100%;
