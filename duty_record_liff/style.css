@@ -552,3 +552,45 @@ html, body {
     display: flex;
     gap: 10px;
 }
+
+/* Reserved Tasks Refined Styling */
+.task-item-card {
+    display: flex;
+    align-items: center;
+    background: #e5e5ea;
+    border-radius: 10px;
+    padding: 12px 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+}
+.task-item-card:active {
+    background: #d1d1d6;
+}
+.task-item-card .task-date-part {
+    flex: 0 0 120px;
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+}
+.task-item-card .task-divider {
+    width: 1px;
+    height: 16px;
+    background: #bbb;
+    margin: 0 10px;
+}
+.task-item-card .task-content-part {
+    flex: 1;
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.task-item-card.done-task .task-content-part {
+    color: #aaa;
+    text-decoration: line-through;
+}

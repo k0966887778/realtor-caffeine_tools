@@ -303,14 +303,20 @@ window.loadReservedTasks = function(date) {
 
     displayTasks.forEach(task => {
         const div = document.createElement('div');
-        div.className = 'task-item';
-        let contentHtml = showingTaskHistory && task.isDone ? `<span style="color:#aaa; text-decoration:line-through;">${task.content}</span>` : task.content;
-        let pfx = `<span style="color:#888;">[${task.displayDate.substring(5)}]</span> `;
+        div.className = showingTaskHistory && task.isDone ? 'task-item-card done-task' : 'task-item-card';
+
+        const dStr = task.displayDate;
+        const dObj = new Date(dStr);
+        let dateLabel = dStr;
+        if (!isNaN(dObj)) {
+            const days = ['日', '一', '二', '三', '四', '五', '六'];
+            dateLabel = `${dObj.getFullYear()}/${dObj.getMonth()+1}/${dObj.getDate()} (週${days[dObj.getDay()]})`;
+        }
+
         div.innerHTML = `
-            <div>
-                <div style="font-size: 14px;">${pfx}${contentHtml}</div>
-                <div style="font-size: 11px; color: #999; margin-top: 4px;">日期: ${task.displayDate} (長按可刪除)</div>
-            </div>
+            <div class="task-date-part">${dateLabel}</div>
+            <div class="task-divider"></div>
+            <div class="task-content-part">${task.content}</div>
         `;
         
         let pressTimer;
