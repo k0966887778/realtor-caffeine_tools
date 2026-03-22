@@ -4,7 +4,7 @@ let dutyCheckInId = null;
 let currentWeekOffset = 0; 
 let currentArrangedTasks = '';
 let showingTaskHistory = false;
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyiK75XXTwFAPQLiQkcxhA0htBLAuCYhXnCVTaMXzVoBORkYPbdsdWfcuuNmFSiD4mFdQ/exec';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxU4OKDLpXON8SEWjJtoI_1GwAMqgxsUjdQ9rsWcmoVllmovVK9lgbY6k-iWuM_zA3aYQ/exec';
 
 window.localShiftData = window.localShiftData || {};
 window.localTasksData = window.localTasksData || {};
@@ -252,6 +252,8 @@ class DynamicFormManager {
                     page.querySelector('.existing-record-id').value = '';
                     page.querySelector('.key-reg-time').value = getTaipeiDate();
                     page.querySelector('.borrower-name').value = '';
+                    page.querySelector('.borrower-phone').value = '';
+                    page.querySelector('.borrower-store').value = '';
                     page.querySelector('.prop-name').value = '';
                     page.querySelector('.key-number').value = '';
                     page.querySelector('.borrow-time').value = '';
@@ -263,6 +265,8 @@ class DynamicFormManager {
                     page.querySelector('.existing-record-id').value = found.recordId;
                     page.querySelector('.key-reg-time').value = found.regTime;
                     page.querySelector('.borrower-name').value = found.borrower;
+                    page.querySelector('.borrower-phone').value = found.phone || '';
+                    page.querySelector('.borrower-store').value = found.store || '';
                     page.querySelector('.prop-name').value = found.prop;
                     page.querySelector('.key-number').value = found.keyNo;
                     page.querySelector('.borrow-time').value = found.borrowTime;
@@ -323,18 +327,51 @@ window.loadReservedTasks = function(date) {
         const startPress = () => {
             pressTimer = setTimeout(() => {
                 Swal.fire({
-                    text: '即將刪除此交辦事項，確認刪除？',
-                    icon: 'warning',
+                    title: '交辦事項操作',
+                    text: '請選擇您要執行的動作',
+                    showDenyButton: true,
                     showCancelButton: true,
-                    confirmButtonText: '刪除',
-                    confirmButtonColor: '#dc3545'
-                }).then((res) => {
+                    confirmButtonText: '編輯',
+                    denyButtonText: '刪除',
+                    cancelButtonText: '取消',
+                    confirmButtonColor: '#20c997',
+                    denyButtonColor: '#dc3545'
+                }).then(async (res) => {
                     if (res.isConfirmed) {
-                        if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
-                            fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_reserved_task', taskId: task.id }) });
+                        // 編輯
+                        const { value: newText } = await Swal.fire({
+                            title: '編輯交辦事項',
+                            input: 'text',
+                            inputValue: task.content,
+                            showCancelButton: true,
+                            confirmButtonText: '儲存',
+                            confirmButtonColor: '#20c997'
+                        });
+                        if (newText && newText !== task.content) {
+                            if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'edit_reserved_task', taskId: task.id, content: newText }) });
+                            }
+                            const tRef = window.localTasksData[task.displayDate].find(t => t.id === task.id);
+                            if (tRef) tRef.content = newText;
+                            loadReservedTasks(date);
                         }
-                        window.localTasksData[task.displayDate] = window.localTasksData[task.displayDate].filter(t => t.id !== task.id);
-                        loadReservedTasks(date); 
+                    } else if (res.isDenied) {
+                        // 刪除
+                        Swal.fire({
+                            text: '即將刪除此交辦事項，確認刪除？',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: '確認刪除',
+                            confirmButtonColor: '#dc3545'
+                        }).then((delRes) => {
+                            if (delRes.isConfirmed) {
+                                if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                                    fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_reserved_task', taskId: task.id }) });
+                                }
+                                window.localTasksData[task.displayDate] = window.localTasksData[task.displayDate].filter(t => t.id !== task.id);
+                                loadReservedTasks(date); 
+                            }
+                        });
                     }
                 });
             }, 800);
@@ -477,6 +514,8 @@ window.openDutyModal = async function(date, shiftLabel) {
                             if (page) {
                                 page.querySelector('.key-reg-time').value = k.regTime || '';
                                 page.querySelector('.borrower-name').value = k.borrower || '';
+                                page.querySelector('.borrower-phone').value = k.phone || '';
+                                page.querySelector('.borrower-store').value = k.store || '';
                                 page.querySelector('.prop-name').value = k.prop || '';
                                 page.querySelector('.key-number').value = k.keyNo || '';
                                 page.querySelector('.borrow-time').value = k.borrowTime || '';
@@ -608,7 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const recName = document.getElementById('recordName').value.trim();
         
         if (recName.length < 2) {
-            Swal.fire({ text: '請輸入全名或至少2個字的名字', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            Swal.fire({ text: '請輸入您的姓名', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -669,7 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('saveAllBtn').addEventListener('click', async () => {
         const recName = document.getElementById('recordName').value.trim();
         if (recName.length < 2) {
-            Swal.fire({ text: '請輸入全名或至少2個字的名字', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            Swal.fire({ text: '請輸入您的姓名', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
         if (!dutyCheckInId) {
@@ -725,6 +764,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     existingRecordId: page.querySelector('.existing-record-id')?.value || undefined,
                     regTime: regTime,
                     borrower: page.querySelector('.borrower-name').value,
+                    phone: page.querySelector('.borrower-phone').value,
+                    store: page.querySelector('.borrower-store').value,
                     prop: page.querySelector('.prop-name').value,
                     keyNo: page.querySelector('.key-number').value,
                     borrowTime: page.querySelector('.borrow-time').value,

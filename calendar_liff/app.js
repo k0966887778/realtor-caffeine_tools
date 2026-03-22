@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 預設設定：請替換為您最終的 GAS 部署連結
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyiK75XXTwFAPQLiQkcxhA0htBLAuCYhXnCVTaMXzVoBORkYPbdsdWfcuuNmFSiD4mFdQ/exec";
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxU4OKDLpXON8SEWjJtoI_1GwAMqgxsUjdQ9rsWcmoVllmovVK9lgbY6k-iWuM_zA3aYQ/exec";
 
     const calendarEl = document.getElementById('calendar');
     const loadingStatus = document.getElementById('loadingStatus');

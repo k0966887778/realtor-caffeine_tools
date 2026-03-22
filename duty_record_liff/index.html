@@ -33,9 +33,9 @@
             </div>
         <!-- Reserved Tasks List Area (Outside modal) -->
         <div class="reserved-tasks-wrapper card">
-            <div class="reserved-tasks-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <span>預約交辦事宜 <small style="color:#999; font-weight:normal; font-size:11px;">(長按清除)</small></span>
-                <button id="toggleTaskHistoryBtn" class="btn btn-sm btn-outline-secondary" style="font-size:11px; padding:2px 8px; border-radius:12px; background:#f8f9fa;">過往紀錄</button>
+            <div class="reserved-tasks-header" style="position:relative; display:flex; justify-content:center; align-items:center; padding:5px 0;">
+                <span style="font-weight:bold;">預約交辦事宜</span>
+                <button id="toggleTaskHistoryBtn" class="btn btn-sm btn-outline-secondary" style="position:absolute; right:0; font-size:11px; padding:2px 8px; border-radius:12px; background:#f8f9fa;">過往紀錄</button>
             </div>
             <div id="reservedTasksList">
                 <div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">請點選上方日期查看交辦事項</div>
@@ -63,7 +63,7 @@
                             </div>
                             <div class="input-group half">
                                 <label for="recordName">打卡人姓名 <span style="color:red">*</span></label>
-                                <input type="text" id="recordName" placeholder="全名或至少2字" required>
+                                <input type="text" id="recordName" placeholder="請輸入您的姓名" required>
                             </div>
                         </div>
                         <div class="input-group">
@@ -221,6 +221,16 @@
                     <label>借用人姓名</label>
                     <input type="text" class="borrower-name" placeholder="請填寫姓名">
                     <small style="color: #999; font-size: 12px; display: block; margin-top: 4px;">提醒：請將名片拍照上傳至LINE官方</small>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="input-group half">
+                    <label>聯絡電話</label>
+                    <input type="tel" class="borrower-phone" placeholder="填寫電話">
+                </div>
+                <div class="input-group half">
+                    <label>來店店別</label>
+                    <input type="text" class="borrower-store" placeholder="填寫店別">
                 </div>
             </div>
             <div class="form-row">
