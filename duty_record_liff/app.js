@@ -287,18 +287,17 @@ window.loadReservedTasks = function(date) {
     listEl.innerHTML = '';
 
     let displayTasks = [];
-    if (showingTaskHistory) {
-        Object.keys(window.localTasksData).forEach(d => {
-            window.localTasksData[d].forEach(t => displayTasks.push({...t, displayDate: d}));
-        });
-        displayTasks.sort((a,b) => a.displayDate > b.displayDate ? -1 : 1);
-    } else {
-        const tasks = window.localTasksData[date] || [];
-        displayTasks = tasks.filter(t => !t.isDone).map(t => ({...t, displayDate: date}));
+    Object.keys(window.localTasksData).forEach(d => {
+        window.localTasksData[d].forEach(t => displayTasks.push({...t, displayDate: d}));
+    });
+    
+    if (!showingTaskHistory) {
+        displayTasks = displayTasks.filter(t => !t.isDone);
     }
+    displayTasks.sort((a,b) => a.displayDate > b.displayDate ? -1 : 1);
     
     if (displayTasks.length === 0) {
-        listEl.innerHTML = `<div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">${showingTaskHistory ? '尚無任何交辦事項紀錄' : '目前無交辦事項'}</div>`;
+        listEl.innerHTML = `<div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">${showingTaskHistory ? '尚無任何交辦事項紀錄' : '目前無未完成交辦事項'}</div>`;
         return;
     }
 
@@ -306,7 +305,7 @@ window.loadReservedTasks = function(date) {
         const div = document.createElement('div');
         div.className = 'task-item';
         let contentHtml = showingTaskHistory && task.isDone ? `<span style="color:#aaa; text-decoration:line-through;">${task.content}</span>` : task.content;
-        let pfx = showingTaskHistory ? `<span style="color:#888;">[${task.displayDate.substring(5)}]</span> ` : '';
+        let pfx = `<span style="color:#888;">[${task.displayDate.substring(5)}]</span> `;
         div.innerHTML = `
             <div>
                 <div style="font-size: 14px;">${pfx}${contentHtml}</div>
@@ -350,24 +349,30 @@ window.openDutyModal = async function(date, shiftLabel) {
     
     // 初始化 tasks checkboxes
     const modalTasksContainer = document.getElementById('modalTasksContainer');
-    const tasks = window.localTasksData[date] || [];
     modalTasksContainer.innerHTML = '';
     
-    const activeTasks = tasks.filter(t => !t.isDone);
-    if (activeTasks.length > 0) {
-        activeTasks.forEach(task => {
+    let allActiveTasks = [];
+    Object.keys(window.localTasksData).forEach(d => {
+        window.localTasksData[d].forEach(t => {
+            if (!t.isDone) allActiveTasks.push({...t, displayDate: d});
+        });
+    });
+    allActiveTasks.sort((a,b) => a.displayDate > b.displayDate ? -1 : 1);
+    
+    if (allActiveTasks.length > 0) {
+        allActiveTasks.forEach(task => {
             const div = document.createElement('div');
             div.style.marginBottom = '8px';
             div.innerHTML = `
                 <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
                     <input type="checkbox" class="task-checkbox" data-taskid="${task.id}" style="margin-top:4px;">
-                    <span style="line-height:1.4;">${task.content}</span>
+                    <span style="line-height:1.4;"><span style="color:#888;">[${task.displayDate.substring(5)}]</span> ${task.content}</span>
                 </label>
             `;
             modalTasksContainer.appendChild(div);
         });
     } else {
-        modalTasksContainer.innerHTML = '<div style="color: #999;">目前無交辦事項</div>';
+        modalTasksContainer.innerHTML = '<div style="color: #999;">目前無未完成交辦事項</div>';
     }
 
     if (!window.customerFormsManager) {
