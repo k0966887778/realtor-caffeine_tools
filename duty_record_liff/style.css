@@ -384,6 +384,7 @@ html, body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    min-width: 0;
 }
 .duty-badges-container {
     flex: 1;
@@ -395,14 +396,16 @@ html, body {
 .duty-badge {
     cursor: pointer;
     font-size: 13px !important;
-    padding: 8px 4px !important;
-    min-height: 32px !important;
+    padding: 4px 2px !important;
+    min-height: 44px !important;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 100% !important;
     border-radius: 6px !important;
     transition: all 0.2s;
+    overflow: hidden;
 }
 /* 空班別：淡灰 */
 .duty-badge.empty-shift {

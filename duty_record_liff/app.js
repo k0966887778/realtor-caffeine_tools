@@ -383,8 +383,28 @@ window.openDutyModal = async function(date, shiftLabel) {
                 if (result.success && result.record) {
                     const rec = result.record;
                     dutyCheckInId = rec.dutyCheckInId;
-                    const timeStr = rec.time ? `簽到時間: ${rec.time}` : `ID: ${dutyCheckInId}`;
-                    document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">${timeStr}</span>`;
+                    
+                    let formattedTime = String(rec.time || '');
+                    const parsedDate = new Date(formattedTime);
+                    if (!isNaN(parsedDate) && formattedTime.includes('GMT')) {
+                        const y = parsedDate.getFullYear();
+                        const m = parsedDate.getMonth() + 1;
+                        const d = parsedDate.getDate();
+                        const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+                        const dayStr = days[parsedDate.getDay()];
+                        const h = parsedDate.getHours();
+                        const min = String(parsedDate.getMinutes()).padStart(2, '0');
+                        const sec = String(parsedDate.getSeconds()).padStart(2, '0');
+                        let period = '';
+                        if (h >= 0 && h < 12) period = '早上';
+                        else if (h >= 12 && h < 18) period = '下午';
+                        else period = '晚上';
+                        const hh = String(h).padStart(2, '0');
+                        formattedTime = `${y}年${m}月${d}日 (${dayStr}) ${period}${hh}:${min}:${sec}  (GMT+8 台北標準時間)`;
+                    }
+
+                    const timeStr = formattedTime ? `簽到時間: ${formattedTime}` : `ID: ${dutyCheckInId}`;
+                    document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄<br><span style="color:#888; font-size:12px; font-weight:normal; margin-top:4px; display:inline-block;">${timeStr}</span>`;
                     document.getElementById('handoverNotes').value = rec.handoverNotes || '';
                     
                     if (rec.customers && rec.customers.length > 0) {
