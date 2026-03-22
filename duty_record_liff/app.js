@@ -1,13 +1,12 @@
 let currentLineId = 'test_line_id_123';
 let currentLineName = '測試人員';
-let dutyCheckInId = null; // GAS 產生的打卡 ID（暫時 mockup）
-let currentWeekOffset = 0; // 週曆位移，0為本週，-1為上週...
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzKBkE8rV-9C4yrWuuu0DypNgx4rPX1q1DUN6whgxDp4p8L2hiofsEKe2_2cpbXaQXLLA/exec';
+let dutyCheckInId = null; 
+let currentWeekOffset = 0; 
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwRkZO4nuUiYOiCt15uiFt3-ua3ZCwWwdZdbXZWohN-vnMAH25sEUiGlLt-C44QO0e8tA/exec';
 
-// 全域本地紀錄暫存 (日期 -> 班別 -> { dutyCheckInId, handoverNotes, arrangedTasks, customers, keys, name })
 window.localShiftData = window.localShiftData || {};
+window.localTasksData = window.localTasksData || {};
 
-// 初始化 LIFF
 async function initializeLiff() {
     try {
         await liff.init({ liffId: '2009511611-ArfdbQzS' });
@@ -23,26 +22,42 @@ async function initializeLiff() {
         
         document.getElementById('profileBox').innerText = `目前使用者：${currentLineName} (連線正常)`;
 
-        // 讀取月曆的歷史班表資料
         if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
             try {
-                const res = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'get_monthly_duty_records' })
-                });
-                const data = await res.json();
-                if (data.success && data.records) {
-                    data.records.forEach(rec => {
-                        window.localShiftData[rec.date] = window.localShiftData[rec.date] || {};
-                        window.localShiftData[rec.date][rec.shiftType] = {
-                            name: rec.name
-                        };
-                    });
-                    // 重新繪製月曆以顯示抓取回來的徽章
-                    renderWeekCalendar();
-                }
+                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_monthly_duty_records' }) })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.records) {
+                            data.records.forEach(rec => {
+                                window.localShiftData[rec.date] = window.localShiftData[rec.date] || {};
+                                window.localShiftData[rec.date][rec.shiftType] = { name: rec.name };
+                            });
+                            renderWeekCalendar();
+                        }
+                    }).catch(e => console.error(e));
+                
+                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_reserved_tasks' }) })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.tasks) {
+                            data.tasks.forEach(t => {
+                                window.localTasksData[t.date] = window.localTasksData[t.date] || [];
+                                window.localTasksData[t.date].push(t);
+                            });
+                            const currEl = document.querySelector('.week-day.selected');
+                            if (currEl) loadReservedTasks(currEl.dataset.date);
+                        }
+                    }).catch(e => console.error(e));
+
+                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'get_unreturned_keys' }) })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.keys) {
+                            window.unreturnedKeysList = data.keys;
+                        }
+                    }).catch(e => console.error(e));
             } catch(e) {
-                console.error('Failed to fetch calendar signs', e);
+                console.error('Failed to fetch initial data', e);
             }
         }
     } catch (err) {
@@ -51,44 +66,23 @@ async function initializeLiff() {
     }
 }
 
-// 產生週曆 (一～日)
 function renderWeekCalendar() {
     const container = document.getElementById('weekCalendar');
     container.innerHTML = '';
     const daysArr = ['一', '二', '三', '四', '五', '六', '日'];
     
-    // 取得要顯示的那週的基準日
     let curr = new Date();
     curr.setDate(curr.getDate() + (currentWeekOffset * 7));
     
-    // 讓 0=週日, 改成 1=週一..7=週日
     let day = curr.getDay() || 7; 
     let monday = new Date(curr.getTime());
     monday.setDate(monday.getDate() - day + 1);
 
-    // 更新標題上的年月顯示
     const monthDisplay = document.getElementById('monthDisplay');
     if (monthDisplay) {
         monthDisplay.innerText = `${monday.getFullYear()}年 ${monday.getMonth() + 1}月`;
     }
 
-    // 這裡用 localShiftData 來存放每個日期的各班別資料
-    const mockDutyRecords = {};
-    if (window.localShiftData) {
-        for (let date in window.localShiftData) {
-            let badges = [];
-            for (let shift in window.localShiftData[date]) {
-                const shiftPrefix = shift.substring(0, 1);
-                const name = window.localShiftData[date][shift].name || currentLineName;
-                badges.push(`${shiftPrefix} ${name.substring(0, 2)}`); // e.g. 早 柏頴
-            }
-            if (badges.length > 0) {
-                mockDutyRecords[date] = badges;
-            }
-        }
-    }
-
-    // 判斷當下是否為本週，以決定預設選取日
     const realTodayStr = new Date().toDateString();
 
     for (let i = 0; i < 7; i++) {
@@ -100,56 +94,65 @@ function renderWeekCalendar() {
         el.className = 'week-day';
         el.dataset.date = dateIso;
 
-        // 簡化顯示，使用數字日期
         const dateStr = d.getDate();
-        const dutyShiftNames = mockDutyRecords[dateIso]; 
         
-        let badgeHtml = '';
-        if (dutyShiftNames && dutyShiftNames.length > 0) {
-            badgeHtml = dutyShiftNames.map(name => `<span class="duty-badge">${name}</span>`).join('');
-        } else {
-            // 為了保持高度排版一致，塞個隱形徽章或空 div (這裡使用隱形)
-            badgeHtml = `<span class="duty-badge" style="visibility: hidden;">無</span>`;
-        }
+        const shifts = ['早', '中', '晚'];
+        let badgesHtml = '';
+        
+        shifts.forEach(shiftPrefix => {
+            const shiftName = shiftPrefix + '班';
+            let recordName = null;
+            if (window.localShiftData && window.localShiftData[dateIso] && window.localShiftData[dateIso][shiftName]) {
+                recordName = window.localShiftData[dateIso][shiftName].name || '';
+            }
+            
+            if (recordName) {
+                const displayName = recordName.length > 2 ? recordName.substring(recordName.length - 2) : recordName;
+                badgesHtml += `<div class="duty-badge recorded-shift" data-shift="${shiftName}">${shiftPrefix} ${displayName}</div>`;
+            } else {
+                badgesHtml += `<div class="duty-badge empty-shift" data-shift="${shiftName}">${shiftPrefix}</div>`;
+            }
+        });
 
         el.innerHTML = `
             <span class="day-label">${daysArr[i]}</span>
             <span class="date-number">${dateStr}</span>
             <div class="duty-badges-container">
-                ${badgeHtml}
+                ${badgesHtml}
             </div>
         `;
         
-        // 預設選中邏輯：如果是今天則選中；如果不是本週，預設選中星期一
         if (currentWeekOffset === 0 && d.toDateString() === realTodayStr) {
             el.classList.add('selected');
+            setTimeout(() => loadReservedTasks(dateIso), 50);
         } else if (currentWeekOffset !== 0 && i === 0) {
             el.classList.add('selected');
+            setTimeout(() => loadReservedTasks(dateIso), 50);
         }
 
-        el.addEventListener('click', () => {
-            document.querySelectorAll('.week-day').forEach(n => n.classList.remove('selected'));
-            el.classList.add('selected');
-            document.getElementById('addDutyBtn').style.display = 'block';
-            document.getElementById('dutyRecordContainer').style.display = 'none'; // 換日期先藏起來
-            
-            // clear form when switching dates
-            document.getElementById('shiftType').value = "";
-            dutyCheckInId = null;
-            document.getElementById('signInBtn').style.display = 'none';
-            document.getElementById('signInStatus').innerText = '';
-            document.getElementById('handoverNotes').value = '';
-            document.getElementById('arrangedTasks').value = '';
-            
-            if (window.customerFormsManager) window.customerFormsManager.reset();
-            if (window.keyFormsManager) window.keyFormsManager.reset();
+        el.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('duty-badge')) {
+                document.querySelectorAll('.week-day').forEach(n => n.classList.remove('selected'));
+                el.classList.add('selected');
+                loadReservedTasks(dateIso);
+            }
+        });
+
+        const badges = el.querySelectorAll('.duty-badge');
+        badges.forEach(badge => {
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.week-day').forEach(n => n.classList.remove('selected'));
+                el.classList.add('selected');
+                const selectedShift = badge.dataset.shift;
+                openDutyModal(dateIso, selectedShift);
+            });
         });
 
         container.appendChild(el);
     }
 }
 
-// 取得台灣時間 (UTC+8) YYYY-MM-DD HH:mm:ss
 function getTaipeiTime() {
     const d = new Date();
     const dateStr = d.toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
@@ -160,7 +163,6 @@ function getTaipeiDate() {
     return new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g, '-');
 }
 
-// 初始化動態分頁表單
 class DynamicFormManager {
     constructor(containerId, tabsId, addBtnId, templateId, formType) {
         this.container = document.getElementById(containerId);
@@ -168,19 +170,15 @@ class DynamicFormManager {
         this.addBtn = document.getElementById(addBtnId);
         this.templateContent = document.getElementById(templateId).content;
         this.formType = formType;
-        this.pages = []; // DOM elements
-        
-        // Initialize first page (already has a '1' button)
+        this.pages = []; 
         this.addPage();
         
-        // Tab functionality
         this.tabsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('tab-btn') && !e.target.classList.contains('add-btn')) {
                 this.switchPage(parseInt(e.target.getAttribute('data-target')));
             }
         });
         
-        // Add new page
         this.addBtn.addEventListener('click', () => {
             this.addPage();
         });
@@ -197,10 +195,9 @@ class DynamicFormManager {
         this.pages.push(pageWrapper);
         this.container.appendChild(pageFragment);
 
-        // ALWAYS Add a new tab button before the addBtn
         const newTab = document.createElement('button');
         newTab.className = 'tab-btn';
-        if (index === 0) newTab.classList.add('active'); // First tab active by default
+        if (index === 0) newTab.classList.add('active'); 
         newTab.setAttribute('data-target', index);
         newTab.textContent = index + 1;
         this.tabsContainer.insertBefore(newTab, this.addBtn);
@@ -209,44 +206,66 @@ class DynamicFormManager {
     }
 
     switchPage(index) {
-        // Toggle visibility of pages
         this.pages.forEach((page, i) => {
-            if (i === index) {
-                page.classList.add('active');
-            } else {
-                page.classList.remove('active');
-            }
+            if (i === index) page.classList.add('active');
+            else page.classList.remove('active');
         });
-
-        // Toggle active state of tabs
         const tabs = this.tabsContainer.querySelectorAll('.tab-btn:not(.add-btn)');
         tabs.forEach((tab, i) => {
-            if (i === index) {
-                tab.classList.add('active');
-            } else {
-                tab.classList.remove('active');
-            }
+            if (i === index) tab.classList.add('active');
+            else tab.classList.remove('active');
         });
     }
 
     setupEventListeners(page) {
-        // "客戶登記" Auto-Date logic when user types/interacts
         page.addEventListener('focusin', (e) => {
             const dateInput = page.querySelector('.reg-date') || page.querySelector('.key-reg-time');
             if (dateInput && !dateInput.value) {
                 dateInput.value = this.formType === 'customer' ? getTaipeiTime() : getTaipeiDate();
             }
-        }, { once: true }); // Only trigger once per page
+        }, { once: true });
         
-        // Source 'Other' dropdown switch
         const sourceSelect = page.querySelector('.source-select');
         if (sourceSelect) {
             sourceSelect.addEventListener('change', (e) => {
                 const otherInput = page.querySelector('.source-other');
-                if (e.target.value === '其他') {
-                    otherInput.classList.remove('hidden');
-                } else {
-                    otherInput.classList.add('hidden');
+                if (e.target.value === '其他') otherInput.classList.remove('hidden');
+                else otherInput.classList.add('hidden');
+            });
+        }
+        
+        const unreturnedSelect = page.querySelector('.unreturned-key-select');
+        if (unreturnedSelect) {
+            if (window.unreturnedKeysList && unreturnedSelect.options.length === 1) {
+                window.unreturnedKeysList.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k.recordId;
+                    opt.text = `[${k.regTime.substring(5)}] ${k.borrower} - ${k.prop}`;
+                    unreturnedSelect.appendChild(opt);
+                });
+            }
+            unreturnedSelect.addEventListener('change', (e) => {
+                const recordId = e.target.value;
+                if (!recordId) {
+                    page.querySelector('.existing-record-id').value = '';
+                    page.querySelector('.key-reg-time').value = getTaipeiDate();
+                    page.querySelector('.borrower-name').value = '';
+                    page.querySelector('.prop-name').value = '';
+                    page.querySelector('.key-number').value = '';
+                    page.querySelector('.borrow-time').value = '';
+                    page.querySelector('.handler-name').value = '';
+                    return;
+                }
+                const found = window.unreturnedKeysList.find(k => k.recordId === recordId);
+                if (found) {
+                    page.querySelector('.existing-record-id').value = found.recordId;
+                    page.querySelector('.key-reg-time').value = found.regTime;
+                    page.querySelector('.borrower-name').value = found.borrower;
+                    page.querySelector('.prop-name').value = found.prop;
+                    page.querySelector('.key-number').value = found.keyNo;
+                    page.querySelector('.borrow-time').value = found.borrowTime;
+                    page.querySelector('.handler-name').value = found.handler;
+                    page.querySelector('.return-time').focus();
                 }
             });
         }
@@ -261,179 +280,189 @@ class DynamicFormManager {
     }
 }
 
+window.loadReservedTasks = function(date) {
+    const listContainer = document.getElementById('reservedTasksList');
+    const tasks = window.localTasksData[date] || [];
+    
+    if (tasks.filter(t => !t.isDone).length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">目前無待辦交辦事項</div>';
+        return;
+    }
+    
+    listContainer.innerHTML = '';
+    tasks.forEach(task => {
+        if (!task.isDone) {
+            const btn = document.createElement('button');
+            btn.className = 'task-item-btn';
+            btn.innerHTML = `
+                <div class="task-datetime">${date}</div>
+                <div class="task-content">${task.content}</div>
+            `;
+            let pressTimer;
+            const startPress = () => {
+                pressTimer = setTimeout(() => {
+                    Swal.fire({
+                        text: '即將刪除此交辦事項，確認刪除？',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '刪除',
+                        confirmButtonColor: '#dc3545'
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                                fetch(GAS_WEB_APP_URL, { method: 'POST', body: JSON.stringify({ action: 'delete_reserved_task', taskId: task.id }) });
+                            }
+                            window.localTasksData[date] = window.localTasksData[date].filter(t => t.id !== task.id);
+                            loadReservedTasks(date); 
+                        }
+                    });
+                }, 800);
+            };
+            const cancelPress = () => clearTimeout(pressTimer);
+            btn.addEventListener('touchstart', startPress);
+            btn.addEventListener('touchend', cancelPress);
+            btn.addEventListener('mousedown', startPress);
+            btn.addEventListener('mouseup', cancelPress);
+            btn.addEventListener('mouseleave', cancelPress);
+            listContainer.appendChild(btn);
+        }
+    });
+}
+
+window.openDutyModal = async function(date, shiftLabel) {
+    document.getElementById('dutyModalOverlay').classList.add('active');
+    document.getElementById('shiftType').value = shiftLabel;
+    
+    // 初始化 tasks checkboxes
+    const modalTasksContainer = document.getElementById('modalTasksContainer');
+    const tasks = window.localTasksData[date] || [];
+    modalTasksContainer.innerHTML = '';
+    
+    const activeTasks = tasks.filter(t => !t.isDone);
+    if (activeTasks.length > 0) {
+        activeTasks.forEach(task => {
+            const div = document.createElement('div');
+            div.style.marginBottom = '8px';
+            div.innerHTML = `
+                <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                    <input type="checkbox" class="task-checkbox" data-taskid="${task.id}" style="margin-top:4px;">
+                    <span style="line-height:1.4;">${task.content}</span>
+                </label>
+            `;
+            modalTasksContainer.appendChild(div);
+        });
+    } else {
+        modalTasksContainer.innerHTML = '<div style="color: #999;">目前無交辦事項</div>';
+    }
+
+    if (!window.customerFormsManager) {
+        window.customerFormsManager = new DynamicFormManager('customerFormsContainer', 'customerTabs', 'addCustomerBtn', 'customerFormTemplate', 'customer');
+        window.keyFormsManager = new DynamicFormManager('keyFormsContainer', 'keyTabs', 'addKeyBtn', 'keyFormTemplate', 'key');
+    }
+    
+    window.customerFormsManager.reset();
+    window.keyFormsManager.reset();
+
+    const dayData = window.localShiftData[date] && window.localShiftData[date][shiftLabel];
+    if (dayData) {
+        dutyCheckInId = dayData.dutyCheckInId;
+        document.getElementById('deleteRecordBtn').style.display = 'block';
+        document.getElementById('signInBtn').style.display = 'none';
+        document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId || 'MOCK'}</span>`;
+        document.getElementById('saveAllBtn').innerText = '儲存 / 修改';
+        document.getElementById('recordName').value = dayData.name || currentLineName;
+        document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
+    } else {
+        dutyCheckInId = null;
+        document.getElementById('deleteRecordBtn').style.display = 'none';
+        document.getElementById('signInBtn').style.display = 'block';
+        document.getElementById('signInStatus').innerText = '新班別，請輸入姓名後簽到';
+        document.getElementById('saveAllBtn').innerText = '儲存';
+        document.getElementById('recordName').value = ''; 
+        document.getElementById('handoverNotes').value = '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeLiff();
     renderWeekCalendar();
 
-    // 綁定上下週按鈕
     document.getElementById('prevWeekBtn').addEventListener('click', () => {
         currentWeekOffset -= 1;
         renderWeekCalendar();
-        document.getElementById('dutyRecordContainer').style.display = 'none';
-        document.getElementById('addDutyBtn').style.display = 'block';
     });
     
     document.getElementById('nextWeekBtn').addEventListener('click', () => {
         currentWeekOffset += 1;
         renderWeekCalendar();
-        document.getElementById('dutyRecordContainer').style.display = 'none';
-        document.getElementById('addDutyBtn').style.display = 'block';
     });
 
-    // Toggle main duty container
-    document.getElementById('addDutyBtn').addEventListener('click', () => {
-        document.getElementById('dutyRecordContainer').style.display = 'block';
-        
-        // Initialize dynamic tabs if not already done
-        if (!window.customerFormsManager) {
-            window.customerFormsManager = new DynamicFormManager(
-                'customerFormsContainer', 'customerTabs', 'addCustomerBtn', 'customerFormTemplate', 'customer'
-            );
-            window.keyFormsManager = new DynamicFormManager(
-                'keyFormsContainer', 'keyTabs', 'addKeyBtn', 'keyFormTemplate', 'key'
-            );
-        }
-
-        // Setup clear placeholder for Area 3 (Tasks)
-        const arrangedTasks = document.getElementById('arrangedTasks');
-        arrangedTasks.addEventListener('focus', function() {
-            this.classList.remove('placeholder-style');
-        });
+    document.getElementById('closeModalBtn').addEventListener('click', () => {
+        document.getElementById('dutyModalOverlay').classList.remove('active');
     });
 
-    // Handle shift changing
-    document.getElementById('shiftType').addEventListener('change', async (e) => {
-        const shift = e.target.value;
+    document.getElementById('addNewTaskBtn').addEventListener('click', async () => {
         const selectedDateEl = document.querySelector('.week-day.selected');
-        const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+        const date = selectedDateEl ? selectedDateEl.dataset.date : getTaipeiDate();
         
-        if (!date || !shift) {
-            dutyCheckInId = null;
-            document.getElementById('deleteRecordBtn').style.display = 'none';
-            document.getElementById('signInBtn').style.display = 'none';
-            document.getElementById('signInStatus').innerText = '';
-            document.getElementById('handoverNotes').value = '';
-            document.getElementById('arrangedTasks').value = '';
-            if (window.customerFormsManager) window.customerFormsManager.reset();
-            if (window.keyFormsManager) window.keyFormsManager.reset();
-            return;
-        }
-
-        document.getElementById('signInStatus').innerText = '正在讀取雲端紀錄...';
-        document.getElementById('signInBtn').style.display = 'none';
-        document.getElementById('handoverNotes').value = '';
-        document.getElementById('arrangedTasks').value = '';
-        if (window.customerFormsManager) window.customerFormsManager.reset();
-        if (window.keyFormsManager) window.keyFormsManager.reset();
-
-        try {
-            if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
-                // Return to local memory if preview mode
-                const dayData = window.localShiftData[date] && window.localShiftData[date][shift];
-                if (dayData) {
-                    dutyCheckInId = dayData.dutyCheckInId;
-                    document.getElementById('deleteRecordBtn').style.display = 'block';
-                    document.getElementById('signInBtn').style.display = 'none';
-                    document.getElementById('signInStatus').innerHTML = `已載入暫存紀錄 <span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId}</span>`;
-                    document.getElementById('handoverNotes').value = dayData.handoverNotes || '';
-                    document.getElementById('arrangedTasks').value = dayData.arrangedTasks || '';
-                } else {
-                    dutyCheckInId = null;
-                    document.getElementById('deleteRecordBtn').style.display = 'none';
-                    document.getElementById('signInBtn').style.display = '';
-                    document.getElementById('signInStatus').innerText = '新班別，請先簽到';
+        const { value: formValues } = await Swal.fire({
+            title: '新增交辦事項',
+            html:
+                `<input id="swal-input-date" type="date" class="swal2-input" value="${date}" style="margin-bottom:10px;">` +
+                '<textarea id="swal-input-content" class="swal2-textarea" placeholder="請輸入交辦事項內容..."></textarea>',
+            focusConfirm: false,
+            showCancelButton: true,
+            confirmButtonText: '新增',
+            cancelButtonText: '取消',
+            preConfirm: () => {
+                const d = document.getElementById('swal-input-date').value;
+                const c = document.getElementById('swal-input-content').value;
+                if (!d || !c) {
+                    Swal.showValidationMessage('日期與內容皆為必填');
+                    return false;
                 }
-                return;
+                return { date: d, content: c };
             }
+        });
 
-            const response = await fetch(GAS_WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'get_single_duty_record', date, shiftType: shift })
-            });
-            const result = await response.json();
+        if (formValues) {
+            Swal.fire({title: '新增中...', allowOutsideClick: false});
+            Swal.showLoading();
             
-            if (result.success && result.record) {
-                const rec = result.record;
-                dutyCheckInId = rec.dutyCheckInId;
-                document.getElementById('deleteRecordBtn').style.display = 'block';
-                document.getElementById('signInBtn').style.display = 'none';
-                const timeStr = rec.time ? `<span style="color:#888; font-size:12px; font-weight:normal;">簽到時間: ${rec.time}</span>` : `<span style="color:#888; font-size:12px; font-weight:normal;">ID: ${dutyCheckInId}</span>`;
-                document.getElementById('signInStatus').innerHTML = `已載入雲端紀錄 <br> ${timeStr}`;
-                document.getElementById('handoverNotes').value = rec.handoverNotes || '';
-                document.getElementById('arrangedTasks').value = rec.arrangedTasks || '';
+            const taskId = 'TASK-' + Date.now();
+            window.localTasksData[formValues.date] = window.localTasksData[formValues.date] || [];
+            window.localTasksData[formValues.date].push({
+                id: taskId,
+                content: formValues.content,
+                isDone: false
+            });
 
-                // Load customers
-                if (rec.customers && rec.customers.length > 0 && window.customerFormsManager) {
-                    window.customerFormsManager.reset();
-                    rec.customers.forEach((c, idx) => {
-                        if (idx > 0) window.customerFormsManager.addPage();
-                        const page = window.customerFormsManager.pages[idx];
-                        if (page) {
-                            page.querySelector('.reg-date').value = c.regDate || '';
-                            page.querySelector('.registrant').value = c.registrant || '';
-                            
-                            const srcSelect = page.querySelector('.source-select');
-                            const srcOther = page.querySelector('.source-other');
-                            if (['電話','來店','LINE','網路','介紹'].includes(c.source)) {
-                                srcSelect.value = c.source;
-                                srcOther.classList.add('hidden');
-                            } else if (c.source) {
-                                srcSelect.value = '其他';
-                                srcOther.value = c.source;
-                                srcOther.classList.remove('hidden');
-                            }
-                            
-                            page.querySelector('.contact-phone').value = c.phone || '';
-                            page.querySelector('.inquiry-prop').value = c.prop || '';
-                            page.querySelector('.customer-need').value = c.need || '';
-                            page.querySelector('.status-select').value = c.status || '';
-                            page.querySelector('.remarks').value = c.remarks || '';
-                        }
+            if (GAS_WEB_APP_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                try {
+                    await fetch(GAS_WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'add_reserved_task', taskId: taskId, date: formValues.date, content: formValues.content })
                     });
-                    window.customerFormsManager.switchPage(0);
-                }
-
-                // Load keys
-                if (rec.keys && rec.keys.length > 0 && window.keyFormsManager) {
-                    window.keyFormsManager.reset();
-                    rec.keys.forEach((k, idx) => {
-                        if (idx > 0) window.keyFormsManager.addPage();
-                        const page = window.keyFormsManager.pages[idx];
-                        if (page) {
-                            page.querySelector('.key-reg-time').value = k.regTime || '';
-                            page.querySelector('.borrower-name').value = k.borrower || '';
-                            page.querySelector('.prop-name').value = k.prop || '';
-                            page.querySelector('.key-number').value = k.keyNo || '';
-                            page.querySelector('.borrow-time').value = k.borrowTime || '';
-                            page.querySelector('.return-time').value = k.returnTime || '';
-                            page.querySelector('.handler-name').value = k.handler || '';
-                            page.querySelector('.confirmer-name').value = k.confirmer || '';
-                        }
-                    });
-                    window.keyFormsManager.switchPage(0);
-                }
-            } else {
-                dutyCheckInId = null;
-                document.getElementById('deleteRecordBtn').style.display = 'none';
-                document.getElementById('signInBtn').style.display = '';
-                document.getElementById('signInStatus').innerText = '新班別，請先簽到';
+                } catch(e) { console.error(e); }
             }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('signInStatus').innerText = '讀取紀錄失敗';
-            document.getElementById('signInBtn').style.display = ''; 
+            
+            Swal.close();
+            const currDate = document.querySelector('.week-day.selected')?.dataset.date;
+            if (currDate === formValues.date) {
+                loadReservedTasks(currDate);
+            }
         }
     });
 
-    // Sign-in Button Mockup with actual fetching structure
     document.getElementById('signInBtn').addEventListener('click', async () => {
         const time = getTaipeiTime();
         const shiftType = document.getElementById('shiftType').value;
         const selectedDateEl = document.querySelector('.week-day.selected');
         const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+        const recName = document.getElementById('recordName').value.trim();
         
-        if (!date || !shiftType) {
-            Swal.fire({ text: '請先選擇日期與班別', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+        if (recName.length < 2) {
+            Swal.fire({ text: '請輸入全名或至少2個字的名字', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -442,18 +471,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('signInBtn').disabled = true;
             document.getElementById('signInBtn').innerText = '簽到中...';
             
-            // 如果還沒設定 GAS 網址，則走 mock 預覽流程
             if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
                 dutyCheckInId = `MOCK-${Math.floor(Math.random()*10000)}`;
                 document.getElementById('signInBtn').style.display = 'none';
                 document.getElementById('signInBtn').disabled = false;
                 document.getElementById('signInBtn').innerText = '簽到';
-                document.getElementById('signInStatus').innerHTML = `已打卡 <span style="color:#888; font-size:12px; font-weight:normal;">${time} ID: ${dutyCheckInId} 僅供預覽</span>`;
+                document.getElementById('signInStatus').innerHTML = `已打卡 <span style="color:#888; font-size:12px; font-weight:normal;">${time} ID: ${dutyCheckInId}</span>`;
                 
-                // Set to week memory
                 window.localShiftData[date] = window.localShiftData[date] || {};
-                window.localShiftData[date][shiftType] = window.localShiftData[date][shiftType] || {};
-                window.localShiftData[date][shiftType].dutyCheckInId = dutyCheckInId;
+                window.localShiftData[date][shiftType] = { name: recName, dutyCheckInId: dutyCheckInId };
                 renderWeekCalendar();
                 return;
             }
@@ -464,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     action: 'record_sign_in',
                     date: date,
                     shiftType: shiftType,
-                    name: currentLineName,
+                    name: recName,
                     lineId: currentLineId,
                     signInTime: time
                 })
@@ -475,13 +501,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('deleteRecordBtn').style.display = 'block';
                 document.getElementById('signInBtn').style.display = 'none';
                 document.getElementById('signInBtn').disabled = false;
-                document.getElementById('signInBtn').innerText = '簽到';
-                document.getElementById('signInStatus').innerHTML = `簽到成功！ <span style="color:#888; font-size:12px; font-weight:normal;">時間: ${time}</span>`;
+                document.getElementById('signInStatus').innerHTML = `簽到成功！ <span style="color:#888; font-size:12px;">時間: ${time}</span>`;
                 
-                // Set to week memory
                 window.localShiftData[date] = window.localShiftData[date] || {};
-                window.localShiftData[date][shiftType] = window.localShiftData[date][shiftType] || {};
-                window.localShiftData[date][shiftType].dutyCheckInId = dutyCheckInId;
+                window.localShiftData[date][shiftType] = { name: recName, dutyCheckInId: dutyCheckInId };
                 renderWeekCalendar();
             } else {
                 Swal.fire({ text: '簽到失敗: ' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
@@ -497,22 +520,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Save All Button Logic
     document.getElementById('saveAllBtn').addEventListener('click', async () => {
+        const recName = document.getElementById('recordName').value.trim();
+        if (recName.length < 2) {
+            Swal.fire({ text: '請輸入全名或至少2個字的名字', icon: 'warning', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            return;
+        }
         if (!dutyCheckInId) {
             Swal.fire({ text: '請先進行簽到取得打卡 ID，才能儲存交接紀錄！', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
         const handoverNotes = document.getElementById('handoverNotes').value;
-        const arrangedTasks = document.getElementById('arrangedTasks').value;
 
-        // 收集客戶資料
+        // Process completed tasks
+        const checkboxes = document.querySelectorAll('.task-checkbox');
+        const completedTaskIds = [];
+        checkboxes.forEach(cb => {
+            if (cb.checked) completedTaskIds.push(cb.dataset.taskid);
+        });
+
         const customers = [];
         const customerPages = document.querySelectorAll('#customerFormsContainer .dynamic-form-page');
         customerPages.forEach(page => {
             const regDate = page.querySelector('.reg-date').value;
-            // 簡單判斷：如果有登記日期或登記人，就當作有在填寫
             if (regDate || page.querySelector('.registrant').value) {
                 customers.push({
                     regDate: regDate,
@@ -527,13 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // 收集鑰匙資料
         const keys = [];
         const keyPages = document.querySelectorAll('#keyFormsContainer .dynamic-form-page');
         keyPages.forEach(page => {
             const regTime = page.querySelector('.key-reg-time').value;
             if (regTime || page.querySelector('.borrower-name').value) {
                 keys.push({
+                    existingRecordId: page.querySelector('.existing-record-id')?.value || undefined,
                     regTime: regTime,
                     borrower: page.querySelector('.borrower-name').value,
                     prop: page.querySelector('.prop-name').value,
@@ -546,18 +577,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const selectedDateEl = document.querySelector('.week-day.selected');
+        const date = selectedDateEl ? selectedDateEl.dataset.date : new Date().toISOString().split('T')[0];
+
         const payload = {
             action: 'record_save_duty',
             dutyCheckInId: dutyCheckInId,
             handoverNotes: handoverNotes,
-            arrangedTasks: arrangedTasks,
+            completedTaskIds: completedTaskIds, // Backend should mark these as done in 7_預約交辦事宜
             customers: customers,
             keys: keys
         };
 
         if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
-            console.log("Mock Payload JSON:", payload);
-            Swal.fire({ text: '預覽模式：所有資料收集成功並模擬送出！(請開啟瀏覽器 Console 查看詳細 JSON)', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+            // locally mark tasks done
+            if (window.localTasksData[date]) {
+                window.localTasksData[date].forEach(t => {
+                    if (completedTaskIds.includes(t.id)) t.isDone = true;
+                });
+            }
+            loadReservedTasks(date);
+            document.getElementById('dutyModalOverlay').classList.remove('active');
+            Swal.fire({ text: '儲存完成！(預覽模式)', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
             return;
         }
 
@@ -572,21 +613,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
             if (result.success) {
-                Swal.fire({ text: '所有紀錄儲存成功！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                Swal.fire({ text: '紀錄儲存成功！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 
-                // Save locally so the calendar and form switching works
-                const selectedDateEl = document.querySelector('.week-day.selected');
-                const date = selectedDateEl ? selectedDateEl.dataset.date : new Date().toISOString().split('T')[0];
+                // locally mark tasks done
+                if (window.localTasksData[date]) {
+                    window.localTasksData[date].forEach(t => {
+                        if (completedTaskIds.includes(t.id)) t.isDone = true;
+                    });
+                }
+                loadReservedTasks(date);
+
                 const shift = document.getElementById('shiftType').value;
-                
                 window.localShiftData[date] = window.localShiftData[date] || {};
                 window.localShiftData[date][shift] = {
                     dutyCheckInId: dutyCheckInId,
                     handoverNotes: handoverNotes,
-                    arrangedTasks: arrangedTasks,
-                    name: currentLineName
+                    name: recName
                 };
-                renderWeekCalendar(); // refresh badges
+                renderWeekCalendar(); 
+                document.getElementById('dutyModalOverlay').classList.remove('active');
 
             } else {
                 Swal.fire({ text: '儲存失敗：' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
@@ -594,18 +639,17 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             Swal.fire({ text: '網路連接錯誤', icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
         } finally {
-            btn.innerText = '儲存';
+            btn.innerText = '儲存 / 修改';
             btn.disabled = false;
         }
     });
 
-    // Delete Record Button handling
     document.getElementById('deleteRecordBtn').addEventListener('click', async () => {
         if (!dutyCheckInId) return;
         
         const confirmResult = await Swal.fire({
             title: '確定要刪除這筆紀錄嗎？',
-            text: '這將會連同客戶登記與鑰匙紀錄一併從雲端徹底刪除。',
+            text: '這將會連同所有附屬紀錄一併刪除。',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',
@@ -619,6 +663,19 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerText = '刪除中...';
             btn.disabled = true;
             try {
+                if (GAS_WEB_APP_URL === 'YOUR_GAS_WEB_APP_URL') {
+                    const selectedDateEl = document.querySelector('.week-day.selected');
+                    const date = selectedDateEl ? selectedDateEl.dataset.date : null;
+                    const shift = document.getElementById('shiftType').value;
+                    if (date && window.localShiftData[date]) {
+                        delete window.localShiftData[date][shift];
+                        renderWeekCalendar();
+                    }
+                    document.getElementById('dutyModalOverlay').classList.remove('active');
+                    Swal.fire({ text: '紀錄已成功刪除！(預覽)', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
+                    return;
+                }
+
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'record_delete_duty', dutyCheckInId: dutyCheckInId })
@@ -627,7 +684,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) {
                     Swal.fire({ text: '紀錄已成功刪除！', icon: 'success', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                     
-                    // Clear local memory
                     const selectedDateEl = document.querySelector('.week-day.selected');
                     const date = selectedDateEl ? selectedDateEl.dataset.date : null;
                     const shift = document.getElementById('shiftType').value;
@@ -635,16 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         delete window.localShiftData[date][shift];
                         renderWeekCalendar();
                     }
-                    
-                    // Reset UI
-                    dutyCheckInId = null;
-                    document.getElementById('deleteRecordBtn').style.display = 'none';
-                    document.getElementById('signInBtn').style.display = '';
-                    document.getElementById('signInStatus').innerText = '紀錄已刪除，請重新簽到';
-                    document.getElementById('handoverNotes').value = '';
-                    document.getElementById('arrangedTasks').value = '';
-                    if (window.customerFormsManager) window.customerFormsManager.reset();
-                    if (window.keyFormsManager) window.keyFormsManager.reset();
+                    document.getElementById('dutyModalOverlay').classList.remove('active');
                 } else {
                     Swal.fire({ text: '刪除失敗: ' + result.error, icon: 'error', confirmButtonText: '確定', confirmButtonColor: '#20c997' });
                 }

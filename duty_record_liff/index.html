@@ -31,76 +31,93 @@
             <div id="weekCalendar" class="week-calendar">
                 <!-- Javascript will generate days here -->
             </div>
-            <button id="addDutyBtn" class="primary-btn" style="margin-top: 15px; display: none;">新增/檢視 該日值班紀錄</button>
+        <!-- Reserved Tasks List Area (Outside modal) -->
+        <div class="reserved-tasks-wrapper card">
+            <div class="reserved-tasks-header">預約交辦事宜</div>
+            <div id="reservedTasksList">
+                <div style="text-align: center; color: #999; font-size: 13px; padding: 10px;">請點選上方日期查看交辦事項</div>
+            </div>
+            <button id="addNewTaskBtn" class="add-task-btn">+</button>
         </div>
 
-        <!-- Duty Record Container (Hidden by default) -->
-        <div id="dutyRecordContainer" class="duty-container" style="display: none;">
-            
-            <!-- Area 1: 簽到交接 -->
-            <div class="card duty-section">
-                <h3 class="section-title">簽到交接</h3>
-                <div class="input-group">
-                    <label for="shiftType">班別</label>
-                    <select id="shiftType" name="shiftType">
-                        <option value="">請選擇</option>
-                        <option value="早班">早班</option>
-                        <option value="中班">中班</option>
-                        <option value="晚班">晚班</option>
-                    </select>
+        <!-- Duty Record Modal (Hidden by default, triggered by shift click) -->
+        <div id="dutyModalOverlay" class="duty-modal-overlay">
+            <div class="duty-modal-content">
+                <div class="modal-header">
+                    <div id="modalTitle" class="modal-title">值班紀錄</div>
+                    <button id="closeModalBtn" class="close-modal-btn">×</button>
                 </div>
-                <div class="input-group">
-                    <button id="signInBtn" class="secondary-btn">簽到</button>
-                    <p id="signInStatus" class="status-text"></p>
-                </div>
-                <div class="input-group">
-                    <label for="handoverNotes">交接事項</label>
-                    <textarea id="handoverNotes" rows="4" placeholder="請填寫交接事項..."></textarea>
-                </div>
-            </div>
-
-            <!-- Area 2: 客戶登記 -->
-            <div class="card duty-section">
-                <div class="section-header-flex">
-                    <h3 class="section-title">客戶登記</h3>
-                    <div class="pagination-tabs" id="customerTabs">
-                        <button class="tab-btn add-btn" id="addCustomerBtn">+</button>
+                
+                <div class="modal-body" id="dutyRecordContainer">
+                    
+                    <!-- Area 1: 簽到交接 -->
+                    <div class="card duty-section">
+                        <h3 class="section-title">簽到交接</h3>
+                        <div class="form-row">
+                            <div class="input-group half">
+                                <label for="shiftType">班別</label>
+                                <input type="text" id="shiftType" readonly style="background-color: #f0f0f0; color: #555; cursor: not-allowed;">
+                            </div>
+                            <div class="input-group half">
+                                <label for="recordName">打卡人姓名 <span style="color:red">*</span></label>
+                                <input type="text" id="recordName" placeholder="全名或至少2字" required>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <button id="signInBtn" class="secondary-btn" style="display:none;">簽到</button>
+                            <p id="signInStatus" class="status-text"></p>
+                        </div>
+                        <div class="input-group">
+                            <label for="handoverNotes">交接事項</label>
+                            <textarea id="handoverNotes" rows="4" placeholder="請填寫交接事項..."></textarea>
+                        </div>
                     </div>
-                </div>
-                <!-- Dynamic Content Container -->
-                <div id="customerFormsContainer">
-                    <!-- Javascript generates forms here -->
-                </div>
-            </div>
 
-            <!-- Area 3: 預約交辦事宜 -->
-            <div class="card duty-section">
-                <h3 class="section-title">預約交辦事宜</h3>
-                <div class="input-group">
-                    <textarea id="arrangedTasks" rows="4" placeholder="例如:友店下午1:30會來店借1988萬邊間雙車的鑰匙；友店下午1:30會來店借編號6的鑰匙；早上10點有廠商進來修冷氣等內容" class="placeholder-style"></textarea>
-                </div>
-            </div>
-
-            <!-- Area 4: 友店借鑰匙控管 -->
-            <div class="card duty-section">
-                <div class="section-header-flex">
-                    <h3 class="section-title">友店借鑰匙控管</h3>
-                    <div class="pagination-tabs" id="keyTabs">
-                        <button class="tab-btn add-btn" id="addKeyBtn">+</button>
+                    <!-- Area 2: 客戶登記 -->
+                    <div class="card duty-section">
+                        <div class="section-header-flex">
+                            <h3 class="section-title">客戶登記</h3>
+                            <div class="pagination-tabs" id="customerTabs">
+                                <button class="tab-btn add-btn" id="addCustomerBtn">+</button>
+                            </div>
+                        </div>
+                        <!-- Dynamic Content Container -->
+                        <div id="customerFormsContainer">
+                            <!-- Javascript generates forms here -->
+                        </div>
                     </div>
+
+                    <!-- Area 3: 預約交辦事宜 (在這邊打勾完成) -->
+                    <div class="card duty-section">
+                        <h3 class="section-title">當日預約交辦事宜 (完成請打勾)</h3>
+                        <div id="modalTasksContainer" style="margin-bottom: 10px; font-size: 14px;">
+                            <!-- Checkboxes will be injected here -->
+                            <div style="color: #999;">目前無交辦事項</div>
+                        </div>
+                    </div>
+
+                    <!-- Area 4: 友店借鑰匙控管 -->
+                    <div class="card duty-section">
+                        <div class="section-header-flex">
+                            <h3 class="section-title">友店借鑰匙控管</h3>
+                            <div class="pagination-tabs" id="keyTabs">
+                                <button class="tab-btn add-btn" id="addKeyBtn">+</button>
+                            </div>
+                        </div>
+                        <!-- Dynamic Content Container -->
+                        <div id="keyFormsContainer">
+                            <!-- Javascript generates forms here -->
+                        </div>
+                    </div>
+
                 </div>
-                <!-- Dynamic Content Container -->
-                <div id="keyFormsContainer">
-                    <!-- Javascript generates forms here -->
+
+                <!-- Global Action Buttons (Fixed Bottom) -->
+                <div class="modal-footer">
+                    <button id="deleteRecordBtn" class="primary-btn" style="display: none; background-color: #dc3545;">刪除</button>
+                    <button id="saveAllBtn" class="primary-btn" style="background-color: var(--primary-dark);">儲存</button>
                 </div>
             </div>
-
-            <!-- Global Action Buttons -->
-            <div style="margin-top: 20px; margin-bottom: 20px; display: flex; gap: 10px;">
-                <button id="deleteRecordBtn" class="primary-btn" style="display: none; background-color: #dc3545;">刪除</button>
-                <button id="saveAllBtn" class="primary-btn" style="background-color: var(--primary-dark);">儲存</button>
-            </div>
-
         </div>
 
         <div id="statusMsg" class="status-msg hidden"></div>
@@ -182,8 +199,16 @@
     <template id="keyFormTemplate">
         <div class="dynamic-form-page">
             <div class="form-row">
+                <div class="input-group full" style="margin-bottom: 5px;">
+                    <select class="unreturned-key-select" style="background:#fffcf0; border-color:#f5c6cb; font-size:13px; color:#555;">
+                        <option value="">(或展開從「未歸還清單」中選取可快速帶入)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="input-group half">
                     <label>登記時間</label>
+                    <input type="hidden" class="existing-record-id">
                     <input type="text" class="key-reg-time" readonly>
                 </div>
                 <div class="input-group half">
